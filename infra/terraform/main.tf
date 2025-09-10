@@ -43,10 +43,8 @@ module "eks" {
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_subnets
 
-  cluster_endpoint_access {
-    public  = true   # replaces cluster_endpoint_public_access
-    private = false
-  }
+  endpoint_public_access  = true
+  endpoint_private_access = false
 
   encryption_config         = []
   enabled_log_types         = []
