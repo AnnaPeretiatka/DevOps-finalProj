@@ -276,6 +276,8 @@ output "ecr_repo_url" {
 output "rds_endpoint" {
   value = module.db.db_instance_endpoint
 }
+/*
 output "acm_arn" {
   value = aws_acm_certificate_validation.cert.certificate_arn
 }
+*/
