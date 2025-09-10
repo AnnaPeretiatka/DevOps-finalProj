@@ -47,7 +47,8 @@ module "eks" {
   endpoint_private_access = false
 
   create_kms_key   = false
-  encryption_config = {}
+  attach_encryption_policy  = false
+  
   enabled_log_types         = []
   create_cloudwatch_log_group = false
   enable_irsa               = true
