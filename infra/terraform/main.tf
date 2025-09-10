@@ -104,7 +104,6 @@ resource "aws_security_group" "db" {
 
 resource "aws_route53_zone" "this" {
   name         = var.domain_name
-  zone_type = "Public"
   tags               = local.tags
 }
 
