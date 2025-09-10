@@ -44,6 +44,7 @@ module "eks" {
   cluster_endpoint_public_access = true
   cluster_encryption_config = []
   cluster_enabled_log_types = []
+  manage_cluster_log_group       = false
   enable_irsa                   = true
   eks_managed_node_groups = {
     default = {
