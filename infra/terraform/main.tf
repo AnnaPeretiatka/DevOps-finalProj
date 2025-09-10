@@ -200,6 +200,15 @@ resource "aws_iam_role_policy_attachment" "github_deploy_attach" {
   policy_arn = aws_iam_policy.deploy_policy.arn
 }
 
+resource "aws_lb" "app" {
+  name               = "${var.project_name}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.db.id] # or another SG
+  subnets            = module.vpc.public_subnets
+  tags               = local.tags
+}
+
 resource "aws_wafv2_web_acl" "alb_waf" {
   name        = "${var.project_name}-waf"
   description = "WAF for public ALB"
@@ -234,7 +243,7 @@ resource "aws_wafv2_web_acl" "alb_waf" {
 }
 
 resource "aws_wafv2_web_acl_association" "alb_waf_assoc" {
-  resource_arn = <your_alb_arn>
+  resource_arn = aws_lb.app.arn
   web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
 }
 
