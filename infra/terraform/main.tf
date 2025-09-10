@@ -65,10 +65,6 @@ module "eks" {
       min_size       = var.node_min
       max_size       = var.node_max
       subnet_ids     = module.vpc.private_subnets
-
-      remote_access = {
-      ec2_ssh_key               = "anna_key_home"
-    }
     }
   }
 
