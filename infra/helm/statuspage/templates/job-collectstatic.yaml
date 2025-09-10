@@ -1,0 +1,15 @@
+{{- if .Values.collectstatic.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata: { name: statuspage-collectstatic-{{ now | date "20060102150405" }}, namespace: statuspage }
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: collectstatic
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["python","manage.py","collectstatic","--noinput"]
+          envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
+{{- end }}

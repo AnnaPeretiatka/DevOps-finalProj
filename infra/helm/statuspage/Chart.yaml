@@ -1,0 +1,4 @@
+apiVersion: v2
+name: statuspage
+description: Status page app
+version: 0.1.0

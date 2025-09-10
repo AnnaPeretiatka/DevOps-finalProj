@@ -1,0 +1,27 @@
+image: { 
+  repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/status_page_ay-repo, 
+  tag: latest, 
+  pullPolicy: IfNotPresent 
+}
+replicaCounts: { web: 2, worker: 1 }
+resources:
+  web:     { requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi} }
+  worker:  { requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi} }
+  scheduler:{ requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 200m, memory: 256Mi} }
+  redis:   { requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 200m, memory: 256Mi} }
+env:
+  DJANGO_SETTINGS_MODULE: statuspage.settings
+  ALLOWED_HOSTS: status.example.com
+  SECRET_KEY: ""
+  DATABASE_URL: ""
+  REDIS_URL: "redis://statuspage-redis:6379/0"
+service: { port: 8000 }
+ingress:
+  enabled: true
+  className: alb
+  hosts: [{ host: status.example.com, paths: [{ path: "/", pathType: Prefix }] }]
+  alb: { scheme: internet-facing, healthcheck_path: "/", target_type: ip }
+hpa: { enabled: true, minReplicas: 2, maxReplicas: 5, targetCPUUtilizationPercentage: 65 }
+pdb: { webMinAvailable: 1 }
+migrations: { enabled: true }
+collectstatic: { enabled: true }

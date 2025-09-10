@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: statuspage-worker, namespace: statuspage }
+spec:
+  replicas: {{ .Values.replicaCounts.worker }}
+  selector: { matchLabels: { app: statuspage, tier: worker } }
+  template:
+    metadata: { labels: { app: statuspage, tier: worker } }
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python","manage.py","rqworker","high","default","low"]
+          envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
+          resources: {{- toYaml .Values.resources.worker | nindent 12 }}

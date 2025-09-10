@@ -1,0 +1,81 @@
+name: ci-cd
+
+on: # triggers for this workflow
+  push:
+    branches:
+      - main           # run on every push to main
+  workflow_dispatch: {} # run when click "Run workflow" (allows manual runs from Actions tab)
+
+# permissions to request the OIDC token (to assume AWS role) and to read repo
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: ${{ secrets.ECR_REPO }} # 992382545251.dkr.ecr.us-east-1.amazonaws.com/status_page_ay-repo
+  EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }} # status-page-ay-eks
+  K8S_NAMESPACE: statuspage
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out your repository code into the runner
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Exchanges GitHub OIDC token for AWS session on the AWS_ROLE_ARN role created by Terraform
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # Terraform output github_deploy_role_arn
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3. Log in to ECR (Docker will be able to push to ecr registry)
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Build the Docker image and push to ECR
+      - name: Build & push Docker image
+        run: |
+          # Use the short git commit SHA as the image tag
+          GIT_SHA=$(git rev-parse --short HEAD)
+          IMAGE_URI="${{ env.ECR_REPO }}:${GIT_SHA}"
+
+          echo "Building image: ${IMAGE_URI}"
+          docker build -t "${IMAGE_URI}" .
+
+          echo "Pushing image: ${IMAGE_URI}"
+          docker push "${IMAGE_URI}"
+
+          # Export for later steps in this job
+          echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
+          echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
+
+      # 5. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig \
+            --region "${AWS_REGION}" \
+            --name "${EKS_CLUSTER}"
+
+      # 6. Install Helm CLI
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      # 7. Deploy/upgrade the app using the Helm chart
+      - name: Helm upgrade/install
+        run: |
+          # Helm values are set from secrets & env.
+          # We pass the repository and tag so web/worker/scheduler use the same image version.
+          helm upgrade --install statuspage infra/helm/statuspage \
+            --namespace "${K8S_NAMESPACE}" \
+            --create-namespace \
+            --set image.repository="${{ env.ECR_REPO }}" \
+            --set image.tag="${GIT_SHA}" \
+            --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
+            --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
+            --set acmArn="${{ secrets.ACM_ARN }}"
