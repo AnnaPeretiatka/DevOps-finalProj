@@ -104,7 +104,7 @@ resource "aws_security_group" "db" {
 
 resource "aws_route53_zone" "this" {
   name         = var.domain_name
-  private_zone = false
+  zone_type = "Public"
   tags               = local.tags
 }
 
@@ -126,7 +126,7 @@ resource "aws_route53_record" "cert_validation" {
       type   = dvo.resource_record_type
     }
   }
-  zone_id = data.aws_route53_zone.this.zone_id
+  zone_id = aws_route53_zone.this.zone_id
   name    = each.value.name
   type    = each.value.type
   ttl     = 60
