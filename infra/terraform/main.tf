@@ -102,14 +102,18 @@ resource "aws_security_group" "db" {
   tags = local.tags
 }
 
-data "aws_route53_zone" "this" {
+resource "aws_route53_zone" "this" {
   name         = var.domain_name
   private_zone = false
+  tags               = local.tags
 }
 
 resource "aws_acm_certificate" "cert" {
   domain_name        = "${var.subdomain}.${var.domain_name}"
   validation_method  = "DNS"
+  lifecycle {
+    create_before_destroy = true
+  }
   tags               = local.tags
 }
 
@@ -131,7 +135,7 @@ resource "aws_route53_record" "cert_validation" {
 
 resource "aws_acm_certificate_validation" "cert" {
   certificate_arn           = aws_acm_certificate.cert.arn
-  validation_record_fqdns   = [for r in aws_route53_record.cert_validation : r.fqdn]
+  validation_record_fqdns   = [for r in aws_route53_record.cert_validation : record.fqdn]
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
