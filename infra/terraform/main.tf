@@ -46,19 +46,39 @@ module "db" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 6.5"
   identifier = "${var.project_name}-pg"
-  engine="postgres" engine_version="16" family="postgres16"
-  instance_class="db.t4g.micro" allocated_storage=var.db_allocated_storage
-  db_name="statuspage" username=var.db_username password=var.db_password port=5432
-  multi_az=var.db_multi_az publicly_accessible=false create_db_subnet_group=true subnet_ids=module.vpc.private_subnets
+  engine="postgres"
+  engine_version="16"
+  family="postgres16"
+  instance_class="db.t4g.micro"
+  allocated_storage=var.db_allocated_storage
+  db_name="statuspage"
+  username=var.db_username
+  password=var.db_password port=5432
+  multi_az=var.db_multi_az
+  publicly_accessible=false
+  create_db_subnet_group=true
+  subnet_ids=module.vpc.private_subnets
   vpc_security_group_ids=[aws_security_group.db.id]
-  backup_window="02:00-03:00" maintenance_window="Mon:03:00-Mon:04:00"
-  deletion_protection=false skip_final_snapshot=false
+  backup_window="02:00-03:00"
+  maintenance_window="Mon:03:00-Mon:04:00"
+  deletion_protection=false
+  skip_final_snapshot=false
   tags = local.tags
 }
 resource "aws_security_group" "db" {
   name="${var.project_name}-db-sg" description="DB access" vpc_id=module.vpc.vpc_id
-  ingress { from_port=5432,to_port=5432,protocol="tcp",cidr_blocks=["10.1.0.0/16"] }
-  egress  { from_port=0,to_port=0,protocol="-1",cidr_blocks=["0.0.0.0/0"] }
+    ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["10.1.0.0/16"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   tags = local.tags
 }
 data "aws_route53_zone" "this" { name=var.domain_name private_zone=false }
@@ -104,7 +124,9 @@ resource "aws_wafv2_web_acl" "alb_waf" {
   rule {
     name     = "AWS-AWSManagedRulesCommonRuleSet"
     priority = 1
-    override_action { none {} }
+    override_action {
+      none {}
+    }
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
