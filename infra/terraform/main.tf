@@ -36,7 +36,7 @@ resource "aws_ecr_repository" "app" {
 
 module "eks" {
   source                        = "terraform-aws-modules/eks/aws"
-  version                       = "~> 20.8"
+  version                       = "~> 21.0"
   cluster_name                  = "${var.project_name}-eks"
   cluster_version               = var.cluster_version
   vpc_id                        = module.vpc.vpc_id
