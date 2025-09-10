@@ -43,6 +43,8 @@ module "eks" {
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_subnets
 
+  enable_cluster_creator_admin_permissions = true
+  
   endpoint_public_access  = true
   endpoint_private_access = false
 
@@ -56,11 +58,17 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
+      name           = "${var.project_name}-ec2"
       instance_types = [var.node_instance_type]
+      ami_type       = "AL2023_x86_64_STANDARD"
       desired_size   = var.node_desired
       min_size       = var.node_min
       max_size       = var.node_max
       subnet_ids     = module.vpc.private_subnets
+
+      remote_access = {
+      ec2_ssh_key               = "anna_key_home"
+    }
     }
   }
 
