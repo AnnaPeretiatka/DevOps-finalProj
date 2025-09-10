@@ -35,17 +35,20 @@ resource "aws_ecr_repository" "app" {
 }
 
 module "eks" {
-  source                        = "terraform-aws-modules/eks/aws"
-  version                       = "= 21.1.0"
-  cluster_name                  = "${var.project_name}-eks"
-  cluster_version               = var.cluster_version
-  vpc_id                        = module.vpc.vpc_id
-  subnet_ids                    = module.vpc.private_subnets
+  source  = "terraform-aws-modules/eks/aws"
+  version = "21.1.0"
+
+  name                   = "${var.project_name}-eks"
+  kubernetes_version     = var.cluster_version
+  vpc_id                 = module.vpc.vpc_id
+  subnet_ids             = module.vpc.private_subnets
   cluster_endpoint_public_access = true
-  cluster_encryption_config = []
-  cluster_enabled_log_types = []
-  create_cluster_log_group = false
-  enable_irsa                   = true
+
+  encryption_config      = []
+  enabled_log_types      = []
+  create_cloudwatch_log_group = false
+  enable_irsa            = true
+
   eks_managed_node_groups = {
     default = {
       instance_types = [var.node_instance_type]
@@ -55,6 +58,7 @@ module "eks" {
       subnet_ids     = module.vpc.private_subnets
     }
   }
+
   tags = local.tags
 }
 
