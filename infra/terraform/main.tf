@@ -38,16 +38,20 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "21.1.0"
 
-  name                   = "${var.project_name}-eks"
-  kubernetes_version     = var.cluster_version
-  vpc_id                 = module.vpc.vpc_id
-  subnet_ids             = module.vpc.private_subnets
-  cluster_endpoint_public_access = true
+  name               = "${var.project_name}-eks"
+  kubernetes_version = var.cluster_version
+  vpc_id             = module.vpc.vpc_id
+  subnet_ids         = module.vpc.private_subnets
 
-  encryption_config      = []
-  enabled_log_types      = []
+  cluster_endpoint_access {
+    public  = true   # replaces cluster_endpoint_public_access
+    private = false
+  }
+
+  encryption_config         = []
+  enabled_log_types         = []
   create_cloudwatch_log_group = false
-  enable_irsa            = true
+  enable_irsa               = true
 
   eks_managed_node_groups = {
     default = {
@@ -261,7 +265,7 @@ output "github_deploy_role_arn" {
   value = aws_iam_role.github_deploy.arn
 }
 output "cluster_name" {
-  value = module.eks.cluster_name
+  value = module.eks.cluster_id
 }
 output "aws_region" {
   value = var.aws_region
