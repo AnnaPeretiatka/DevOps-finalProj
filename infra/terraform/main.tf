@@ -42,6 +42,8 @@ module "eks" {
   vpc_id                        = module.vpc.vpc_id
   subnet_ids                    = module.vpc.private_subnets
   cluster_endpoint_public_access = true
+  cluster_encryption_config = []
+  cluster_enabled_log_types = []
   enable_irsa                   = true
   eks_managed_node_groups = {
     default = {
@@ -106,7 +108,7 @@ resource "aws_route53_zone" "this" {
   name         = var.domain_name
   tags               = local.tags
 }
-
+/*
 resource "aws_acm_certificate" "cert" {
   domain_name        = "${var.subdomain}.${var.domain_name}"
   validation_method  = "DNS"
@@ -136,7 +138,7 @@ resource "aws_acm_certificate_validation" "cert" {
   certificate_arn           = aws_acm_certificate.cert.arn
   validation_record_fqdns   = [for r in aws_route53_record.cert_validation : r.fqdn]
 }
-
+*/
 resource "aws_iam_openid_connect_provider" "github" {
   url              = "https://token.actions.githubusercontent.com"
   client_id_list   = ["sts.amazonaws.com"]
@@ -211,7 +213,7 @@ resource "aws_lb" "app" {
   subnets            = module.vpc.public_subnets
   tags               = local.tags
 }
-
+/*
 resource "aws_wafv2_web_acl" "alb_waf" {
   name        = "${var.project_name}-waf"
   description = "WAF for public ALB"
@@ -249,7 +251,7 @@ resource "aws_wafv2_web_acl_association" "alb_waf_assoc" {
   resource_arn = aws_lb.app.arn
   web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
 }
-
+*/
 output "github_deploy_role_arn" {
   value = aws_iam_role.github_deploy.arn
 }
