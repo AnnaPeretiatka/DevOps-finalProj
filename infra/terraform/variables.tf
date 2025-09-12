@@ -10,7 +10,7 @@ variable "aws_region" {
 
 variable "cluster_version" { 
     type = string
-    default = "1.33"
+    default = "1.30"
 }
 
 variable "node_instance_type" { 
