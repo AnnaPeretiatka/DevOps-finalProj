@@ -74,7 +74,7 @@ module "eks" {
   tags = local.tags
 }
 
-# ------------------------------------------------ EKS Add-ons --------------------------------------------
+# ------------------------------------------------ EKS Add-ons (2/3) -----------------------------------------
 
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name             = module.eks.cluster_name
@@ -85,12 +85,6 @@ resource "aws_eks_addon" "vpc_cni" {
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name      = module.eks.cluster_name
   addon_name        = "kube-proxy"
-  tags              = local.tags
-}
-
-resource "aws_eks_addon" "coredns" {
-  cluster_name      = module.eks.cluster_name
-  addon_name        = "coredns"
   tags              = local.tags
 }
 
@@ -145,11 +139,19 @@ resource "aws_eks_node_group" "default" {
 
   depends_on = [
     aws_eks_addon.vpc_cni,
-    aws_eks_addon.kube_proxy,
-    aws_eks_addon.coredns
+    aws_eks_addon.kube_proxy
   ]
 
   tags = local.tags
+}
+
+# ------------------------------------------------ EKS Add-ons (3/3) -----------------------------------------
+
+resource "aws_eks_addon" "coredns" {
+  cluster_name      = module.eks.cluster_name
+  addon_name        = "coredns"
+  depends_on   = [aws_eks_node_group.default]
+  tags              = local.tags
 }
 
 # --------------------------------------------- DB-RDS ---------------------------------------
