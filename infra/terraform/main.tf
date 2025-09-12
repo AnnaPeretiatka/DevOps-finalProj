@@ -65,8 +65,8 @@ module "eks" {
   create_kms_key            = false
   attach_encryption_policy  = false
 
-  # enabled_log_types         = []
-  # create_cloudwatch_log_group = false
+  enabled_log_types         = []
+  create_cloudwatch_log_group = false
   
   eks_managed_node_groups = {}
   addons                  = {}
