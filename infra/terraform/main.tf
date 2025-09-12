@@ -56,10 +56,6 @@ module "eks" {
   create_cloudwatch_log_group = false
   enable_irsa               = true
 
-  eks_managed_node_group_defaults = {
-    lifecycle = {
-      create_before_destroy = false
-    }
   }
 
   eks_managed_node_groups = {
@@ -74,7 +70,7 @@ module "eks" {
     }
   }
 
-  cluster_addons = {
+  addons = {
     vpc-cni = {
       most_recent = true
     }
