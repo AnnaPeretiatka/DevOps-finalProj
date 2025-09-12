@@ -56,8 +56,6 @@ module "eks" {
   create_cloudwatch_log_group = false
   enable_irsa               = true
 
-  }
-
   eks_managed_node_groups = {
     default = {
       name           = "${var.project_name}-ec2"
