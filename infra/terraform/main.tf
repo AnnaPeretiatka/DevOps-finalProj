@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 locals {
   tags = {
     Project = var.project_name
-    Owner   = data.aws_caller_identity.current.arn
+    Owner = data.aws_caller_identity.current.arn
   }
 }
 
@@ -49,22 +49,40 @@ module "eks" {
   endpoint_private_access = false
 
   encryption_config = null
-  create_kms_key   = false
+  create_kms_key    = false
   attach_encryption_policy  = false
 
   enabled_log_types         = []
   create_cloudwatch_log_group = false
   enable_irsa               = true
 
+  eks_managed_node_group_defaults = {
+    lifecycle = {
+      create_before_destroy = false
+    }
+  }
+
   eks_managed_node_groups = {
     default = {
       name           = "${var.project_name}-ec2"
       instance_types = [var.node_instance_type]
-      ami_type       = "AL2_x86_64"
+      ami_type       = "AL2023_x86_64_STANDARD"
       desired_size   = var.node_desired
       min_size       = var.node_min
       max_size       = var.node_max
       subnet_ids     = module.vpc.private_subnets
+    }
+  }
+
+  cluster_addons = {
+    vpc-cni = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    coredns = {
+      most_recent = true
     }
   }
 
@@ -119,8 +137,8 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_route53_zone" "this" {
-  name         = var.domain_name
-  tags               = local.tags
+  name = var.domain_name
+  tags = local.tags
 }
 /*
 resource "aws_acm_certificate" "cert" {
