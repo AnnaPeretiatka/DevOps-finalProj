@@ -60,7 +60,7 @@ module "eks" {
     default = {
       name           = "${var.project_name}-ec2"
       instance_types = [var.node_instance_type]
-      ami_type       = "AL2023_x86_64_STANDARD"
+      ami_type       = "AL2_x86_64"
       desired_size   = var.node_desired
       min_size       = var.node_min
       max_size       = var.node_max
