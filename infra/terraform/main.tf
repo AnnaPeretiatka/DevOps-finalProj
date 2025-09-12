@@ -79,22 +79,18 @@ module "eks" {
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name             = module.eks.cluster_name
   addon_name               = "vpc-cni"
-  resolve_conflicts        = "OVERWRITE"
-  addon_version            = "v1.19.5-eksbuild.1" # for EKS 1.30 (or set var if you prefer)
   tags                     = local.tags
 }
 
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name      = module.eks.cluster_name
   addon_name        = "kube-proxy"
-  resolve_conflicts = "OVERWRITE"
   tags              = local.tags
 }
 
 resource "aws_eks_addon" "coredns" {
   cluster_name      = module.eks.cluster_name
   addon_name        = "coredns"
-  resolve_conflicts = "OVERWRITE"
   tags              = local.tags
 }
 
