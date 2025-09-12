@@ -3,9 +3,11 @@ data "aws_caller_identity" "current" {}
 locals {
   tags = {
     Project = var.project_name
-    Owner = data.aws_caller_identity.current.arn
+    Owner   = data.aws_caller_identity.current.arn
   }
 }
+
+# ------------------------------------------------ VPC ----------------------------------------------------
 
 module "vpc" {
   source                  = "terraform-aws-modules/vpc/aws"
@@ -21,15 +23,17 @@ module "vpc" {
   enable_dns_hostnames    = true
   enable_dns_support      = true
   public_subnet_tags      = { 
-    "kubernetes.io/role/elb" = 1
+    "kubernetes.io/role/elb"                        = 1
     "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
   }
   private_subnet_tags     = { 
-    "kubernetes.io/role/internal-elb" = 1
+    "kubernetes.io/role/internal-elb"               = 1
     "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
   }
   tags                    = local.tags
 }
+
+# ------------------------------------------------ ECR ----------------------------------------------------
 
 resource "aws_ecr_repository" "app" {
   name = "${var.project_name}-repo"
@@ -39,6 +43,8 @@ resource "aws_ecr_repository" "app" {
   force_delete = true
   tags         = local.tags
 }
+
+# ------------------------------------------------ EKS Cluster ---------------------------------------------
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -53,41 +59,104 @@ module "eks" {
   
   endpoint_public_access  = true
   endpoint_private_access = false
+  enable_irsa             = true
 
-  encryption_config = null
-  create_kms_key    = false
+  encryption_config         = null
+  create_kms_key            = false
   attach_encryption_policy  = false
 
-  enabled_log_types         = []
-  create_cloudwatch_log_group = false
-  enable_irsa               = true
-
-  eks_managed_node_groups = {
-    default = {
-      name           = "${var.project_name}-ec2"
-      instance_types = [var.node_instance_type]
-      ami_type       = "AL2_x86_64"
-      desired_size   = var.node_desired
-      min_size       = var.node_min
-      max_size       = var.node_max
-      subnet_ids     = module.vpc.private_subnets
-    }
-  }
-
-  addons = {
-    vpc-cni = {
-      most_recent = true
-    }
-    kube-proxy = {
-      most_recent = true
-    }
-    coredns = {
-      most_recent = true
-    }
-  }
+  # enabled_log_types         = []
+  # create_cloudwatch_log_group = false
+  
+  eks_managed_node_groups = {}
+  addons                  = {}
 
   tags = local.tags
 }
+
+# ------------------------------------------------ EKS Add-ons --------------------------------------------
+
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name             = module.eks.cluster_name
+  addon_name               = "vpc-cni"
+  resolve_conflicts        = "OVERWRITE"
+  addon_version            = "v1.19.5-eksbuild.1" # for EKS 1.30 (or set var if you prefer)
+  tags                     = local.tags
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name      = module.eks.cluster_name
+  addon_name        = "kube-proxy"
+  resolve_conflicts = "OVERWRITE"
+  tags              = local.tags
+}
+
+resource "aws_eks_addon" "coredns" {
+  cluster_name      = module.eks.cluster_name
+  addon_name        = "coredns"
+  resolve_conflicts = "OVERWRITE"
+  tags              = local.tags
+}
+
+# --------------------------------------------- Node Group IAM Role ---------------------------------------
+
+resource "aws_iam_role" "node_role" {
+  name = "${var.project_name}-ng-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" },
+      Action   = "sts:AssumeRole"
+    }]
+  })
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "node_AmazonEKSWorkerNodePolicy" {
+  role       = aws_iam_role.node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "node_AmazonEC2ContainerRegistryReadOnly" {
+  role       = aws_iam_role.node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "node_AmazonEKS_CNI_Policy" {
+  role       = aws_iam_role.node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+# --------------------------------------------- Node Group ---------------------------------------
+
+resource "aws_eks_node_group" "default" {
+  cluster_name    = module.eks.cluster_name
+  node_group_name = "${var.project_name}-ec2"
+  node_role_arn   = aws_iam_role.node_role.arn
+  subnet_ids      = module.vpc.private_subnets
+
+  scaling_config {
+    desired_size = var.node_desired
+    max_size     = var.node_max
+    min_size     = var.node_min
+  }
+
+  ami_type       = "AL2_x86_64"
+  instance_types = [var.node_instance_type]
+  disk_size      = 20
+
+  depends_on = [
+    aws_eks_addon.vpc_cni,
+    aws_eks_addon.kube_proxy,
+    aws_eks_addon.coredns
+  ]
+
+  tags = local.tags
+}
+
+# --------------------------------------------- DB-RDS ---------------------------------------
 
 module "db" {
   source                   = "terraform-aws-modules/rds/aws"
@@ -108,9 +177,10 @@ module "db" {
   subnet_ids               = module.vpc.private_subnets
   vpc_security_group_ids   = [aws_security_group.db.id]
   backup_window            = "02:00-03:00"
+  max_allocated_storage = 100
   maintenance_window       = "Mon:03:00-Mon:04:00"
   deletion_protection      = false
-  skip_final_snapshot      = false
+  skip_final_snapshot      = true
   tags                     = local.tags
 }
 
@@ -123,7 +193,7 @@ resource "aws_security_group" "db" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["10.1.0.0/16"]
+    security_groups = [module.eks.node_security_group_id]
   }
 
   egress {
@@ -136,10 +206,15 @@ resource "aws_security_group" "db" {
   tags = local.tags
 }
 
+# --------------------------------------------- Route53 ----------------------------------------------
+
 resource "aws_route53_zone" "this" {
   name = var.domain_name
   tags = local.tags
 }
+
+# ---------------------------- ACM_certificate - not prmissions error -------------------------------
+
 /*
 resource "aws_acm_certificate" "cert" {
   domain_name        = "${var.subdomain}.${var.domain_name}"
@@ -171,6 +246,9 @@ resource "aws_acm_certificate_validation" "cert" {
   validation_record_fqdns   = [for r in aws_route53_record.cert_validation : r.fqdn]
 }
 */
+
+# --------------------------------------------- GitHub ----------------------------------------------
+
 resource "aws_iam_openid_connect_provider" "github" {
   url              = "https://token.actions.githubusercontent.com"
   client_id_list   = ["sts.amazonaws.com"]
@@ -237,14 +315,86 @@ resource "aws_iam_role_policy_attachment" "github_deploy_attach" {
   policy_arn = aws_iam_policy.deploy_policy.arn
 }
 
+# --------------------------------------------- ALB ----------------------------------------------
+
+resource "aws_security_group" "alb" {
+  name        = "${var.project_name}-alb-sg"
+  description = "Allow inbound HTTP/HTTPS to ALB"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = local.tags
+}
+
+# Application Load Balancer
 resource "aws_lb" "app" {
   name               = "${var.project_name}-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.db.id] # or another SG
+  security_groups    = [aws_security_group.alb.id]
   subnets            = module.vpc.public_subnets
   tags               = local.tags
 }
+
+# Listener for HTTP (80)
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "ALB is alive"
+      status_code  = "200"
+    }
+  }
+}
+
+# Listener for HTTPS (443) - requires ACM cert - currently not working
+/*
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.cert.arn
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "ALB HTTPS is alive"
+      status_code  = "200"
+    }
+  }
+}
+*/
+
+
+# --------------------------------------------- WAF - not working ----------------------------------------------
+
 /*
 resource "aws_wafv2_web_acl" "alb_waf" {
   name        = "${var.project_name}-waf"
@@ -284,11 +434,14 @@ resource "aws_wafv2_web_acl_association" "alb_waf_assoc" {
   web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
 }
 */
+
+# --------------------------------------------- Outputs ---------------------------------------
+
 output "github_deploy_role_arn" {
   value = aws_iam_role.github_deploy.arn
 }
 output "cluster_name" {
-  value = module.eks.cluster_id
+  value = module.eks.cluster_name
 }
 output "aws_region" {
   value = var.aws_region
