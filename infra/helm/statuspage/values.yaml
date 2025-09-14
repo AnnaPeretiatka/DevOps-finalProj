@@ -1,27 +1,67 @@
 image: { 
-  repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/status_page_ay-repo, 
+  repository: "", 
   tag: latest, 
   pullPolicy: IfNotPresent 
 }
-replicaCounts: { web: 2, worker: 1 }
+replicaCounts: { 
+  web: 2,
+  worker: 1
+}
+
 resources:
-  web:     { requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi} }
-  worker:  { requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi} }
-  scheduler:{ requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 200m, memory: 256Mi} }
-  redis:   { requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: 200m, memory: 256Mi} }
+  web:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  worker:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  scheduler:
+    requests: { cpu: 50m,  memory: 128Mi }
+    limits:   { cpu: 200m, memory: 256Mi }
+  redis:
+    requests: { cpu: 50m,  memory: 128Mi }
+    limits:   { cpu: 200m, memory: 256Mi }
+
+# Most overridden by --set env.* at deploy time
 env:
   DJANGO_SETTINGS_MODULE: statuspage.settings
-  ALLOWED_HOSTS: status.example.com
+  ALLOWED_HOSTS: ""
   SECRET_KEY: ""
   DATABASE_URL: ""
-  REDIS_URL: "redis://statuspage-redis:6379/0"
-service: { port: 8000 }
+  REDIS_URL: ""
+
+service: { 
+  port: 8000
+}
+
 ingress:
   enabled: true
   className: alb
-  hosts: [{ host: status.example.com, paths: [{ path: "/", pathType: Prefix }] }]
-  alb: { scheme: internet-facing, healthcheck_path: "/", target_type: ip }
-hpa: { enabled: true, minReplicas: 2, maxReplicas: 5, targetCPUUtilizationPercentage: 65 }
-pdb: { webMinAvailable: 1 }
-migrations: { enabled: true }
-collectstatic: { enabled: true }
+  annotations: {
+    kubernetes.io/ingress.class: alb,
+    alb.ingress.kubernetes.io/scheme: internet-facing,
+    alb.ingress.kubernetes.io/target-type: ip,
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80,"HTTPS":443}]',
+    #alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:123456789012:certificate/abcd1234-ab12-cd34-ef56-abcdef123456,
+    alb.ingress.kubernetes.io/healthcheck-path: /
+  }
+  hosts:
+    - host: example.com    # will be overridden via --set ingress.hosts[0].host
+      paths:
+        - path: /
+          pathType: Prefix
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 65
+
+pdb:
+  webMinAvailable: 1
+
+migrations:
+  enabled: true
+
+collectstatic:
+  enabled: true
