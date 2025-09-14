@@ -1,63 +1,93 @@
 #
 # Required Settings
 #
+import os
+from urllib.parse import urlparse
+
+
 
 # This is a list of valid fully-qualified domain names (FQDNs) for the Status-Page server. Status-Page will not permit
 # write access to the server via any other hostnames. The first FQDN in the list will be treated as the preferred name.
 #
 # Example: ALLOWED_HOSTS = ['status-page.example.com', 'status-page.internal.local']
-ALLOWED_HOSTS = ['*']
+STATUS_HOSTNAME = os.environ.get("STATUS_HOSTNAME")
+if STATUS_HOSTNAME:
+    ALLOWED_HOSTS = [STATUS_HOSTNAME]
+    # Use https in prod; ALB + ACM will terminate TLS and forward to app
+    SITE_URL = f"https://{STATUS_HOSTNAME}"
+else:
+    # Fall back to your original values (good for local/dev)
+    ALLOWED_HOSTS = ['*']
+    # Define the URL which will be used e.g. in E-Mails
+    SITE_URL = "http://status-page-ay.ay.com"
 
 # PostgreSQL database configuration. See the Django documentation for a complete list of available parameters:
 #   https://docs.djangoproject.com/en/stable/ref/settings/#databases
-DATABASE = {
-    'NAME': 'statuspage',         # Database name
-    'USER': 'statuspage',               # PostgreSQL username
-    'PASSWORD': 'status',           # PostgreSQL password
-    'HOST': 'localhost',      # Database server
-    'PORT': '5432',               # Database port (leave blank for default)
-    'CONN_MAX_AGE': 300,      # Max database connection age
-}
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    u = urlparse(DATABASE_URL)
+    DATABASE = {
+        'NAME': (u.path.lstrip('/') or 'statuspage'),
+        'USER': u.username or 'statuspage',
+        'PASSWORD': u.password or '',
+        'HOST': u.hostname or 'localhost',
+        'PORT': str(u.port or 5432),
+        'CONN_MAX_AGE': 300,
+    }
+else:
+    # Fallback for local/dev
+    DATABASE = {
+        'NAME': 'statuspage',
+        'USER': 'statuspage',
+        'PASSWORD': 'status',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'CONN_MAX_AGE': 300,
+    }
+
 
 # Redis database settings. Redis is used for caching and for queuing background tasks. A separate configuration exists
 # for each. Full connection details are required.
-REDIS = {
-    'tasks': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        # Comment out `HOST` and `PORT` lines and uncomment the following if using Redis Sentinel
-        # 'SENTINELS': [('mysentinel.redis.example.com', 6379)],
-        # 'SENTINEL_SERVICE': 'status-page',
-        #'PASSWORD': '',
-        'DATABASE': 0,
-        'SSL': False,
-        # Set this to True to skip TLS certificate verification
-        # This can expose the connection to attacks, be careful
-        # 'INSECURE_SKIP_TLS_VERIFY': False,
-    },
-    'caching': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        # Comment out `HOST` and `PORT` lines and uncomment the following if using Redis Sentinel
-        # 'SENTINELS': [('mysentinel.redis.example.com', 6379)],
-        # 'SENTINEL_SERVICE': 'netbox',
-        #'PASSWORD': '',
-        'DATABASE': 1,
-        'SSL': False,
-        # Set this to True to skip TLS certificate verification
-        # This can expose the connection to attacks, be careful
-        # 'INSECURE_SKIP_TLS_VERIFY': False,
-    }
-}
 
-# Define the URL which will be used e.g. in E-Mails
-SITE_URL = ""
+REDIS_URL = os.environ.get("REDIS_URL")
+if REDIS_URL:
+    r = urlparse(REDIS_URL)
+    host = r.hostname or 'localhost'
+    port = r.port or 6379
+    # We use DB 0 for tasks and DB 1 for caching to mirror your original structure
+    REDIS = {
+        'tasks':   {'HOST': host, 'PORT': port, 'DATABASE': 0, 'SSL': (r.scheme == 'rediss')},
+        'caching': {'HOST': host, 'PORT': port, 'DATABASE': 1, 'SSL': (r.scheme == 'rediss')},
+    }
+else:
+    # Fallback for local/dev
+    REDIS = {
+        'tasks': {
+            'HOST': 'localhost',
+            'PORT': 6379,
+            'DATABASE': 0,
+            'SSL': False,
+        },
+        'caching': {
+            'HOST': 'localhost',
+            'PORT': 6379,
+            'DATABASE': 1,
+            'SSL': False,
+        }
+    }
+
 
 # This key is used for secure generation of random numbers and strings. It must never be exposed outside of this file.
 # For optimal security, SECRET_KEY should be at least 50 characters in length and contain a mix of letters, numbers, and
 # symbols. Status-Page will not run without this defined. For more information, see
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-SECRET_KEY
-SECRET_KEY = 'ZcyS%a_0^PAwPk4ZC5g@SUp-Y&Jhb^ER+_SL*q-glehDZmS$OZ'
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "abQ7skRUStqCH_tLvtV_d8Z3Y4d2Jp7jFem2IOla-UJSZQtNqssTjYVv9TAcE1on"  # dev/local only
+)
+
+#SECRET_KEY = 'ZcyS%a_0^PAwPk4ZC5g@SUp-Y&Jhb^ER+_SL*q-glehDZmS$OZ'
 
 #
 # Optional Settings
