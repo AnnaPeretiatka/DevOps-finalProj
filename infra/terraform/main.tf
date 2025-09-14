@@ -441,27 +441,51 @@ resource "aws_wafv2_web_acl_association" "alb_waf_assoc" {
 output "github_deploy_role_arn" {
   value = aws_iam_role.github_deploy.arn
 }
+
 output "cluster_name" {
   value = module.eks.cluster_name
 }
+
 output "aws_region" {
   value = var.aws_region
 }
+
 output "vpc_id" {
   value = module.vpc.vpc_id
 }
+
 output "private_subnets" {
   value = module.vpc.private_subnets
 }
+
 output "public_subnets" {
   value = module.vpc.public_subnets
 }
+
 output "ecr_repo_url" {
   value = aws_ecr_repository.app.repository_url
 }
+
 output "rds_endpoint" {
   value = module.db.db_instance_endpoint
 }
+
+output "db_host" {
+  value = module.db.db_instance_address
+}
+
+output "db_port" {
+  value = module.db.db_instance_port
+}
+
+output "db_name" {
+  value = module.db.db_instance_name
+}
+
+output "eks_cluster_sg_id" {
+  value = module.eks.cluster_security_group_id
+}
+
 /*
 output "acm_arn" {
   value = aws_acm_certificate_validation.cert.certificate_arn
