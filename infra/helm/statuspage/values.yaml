@@ -37,19 +37,18 @@ service: {
 ingress:
   enabled: true
   className: alb
-  annotations: {
-    kubernetes.io/ingress.class: alb,
-    alb.ingress.kubernetes.io/scheme: internet-facing,
-    alb.ingress.kubernetes.io/target-type: ip,
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80,"HTTPS":443}]',
-    #alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:123456789012:certificate/abcd1234-ab12-cd34-ef56-abcdef123456,
-    alb.ingress.kubernetes.io/healthcheck-path: /
+  alb: {
+    scheme: internet-facing,
+    target_type: ip,
+    healthcheck_path: /
   }
   hosts:
     - host: example.com    # will be overridden via --set ingress.hosts[0].host
       paths:
         - path: /
           pathType: Prefix
+
+acmArn: ""
 
 hpa:
   enabled: true

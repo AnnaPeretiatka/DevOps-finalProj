@@ -9,8 +9,13 @@ metadata:
     alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.alb.scheme }}
     alb.ingress.kubernetes.io/target-type: {{ .Values.ingress.alb.target_type }}
     alb.ingress.kubernetes.io/healthcheck-path: {{ .Values.ingress.alb.healthcheck_path }}
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: "{{ .Values.acmArn | default "" }}"
+{{- if .Values.acmArn }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: "{{ .Values.acmArn }}"
+{{- else }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+{{- end }}
+
 spec:
   rules:
   {{- range .Values.ingress.hosts }}
