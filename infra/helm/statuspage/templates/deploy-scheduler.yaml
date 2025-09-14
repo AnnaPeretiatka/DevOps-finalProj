@@ -1,16 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: statuspage-scheduler, namespace: statuspage }
+metadata: {
+  name: statuspage-scheduler,
+  namespace: statuspage
+}
 spec:
   replicas: 1
-  selector: { matchLabels: { app: statuspage, tier: scheduler } }
+  selector: {
+    matchLabels: {
+      app: statuspage,
+      tier: scheduler
+    }
+  }
   template:
-    metadata: { labels: { app: statuspage, tier: scheduler } }
+    metadata: {
+      labels: {
+        app: statuspage,
+        tier: scheduler
+      }
+    }
     spec:
       containers:
         - name: scheduler
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python","manage.py","rqscheduler"]
+          command: ["python","statuspage/manage.py","rqscheduler"]
           envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
           resources: {{- toYaml .Values.resources.scheduler | nindent 12 }}
