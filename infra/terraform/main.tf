@@ -327,7 +327,8 @@ resource "aws_iam_role_policy_attachment" "github_deploy_attach" {
   policy_arn = aws_iam_policy.deploy_policy.arn
 }
 
-# --------------------------------------------- ALB ----------------------------------------------
+/*
+# --------------------------------------------- ALB - not used at ALL ----------------------------------------------
 
 resource "aws_security_group" "alb" {
   name        = "${var.project_name}-alb-sg"
@@ -368,6 +369,7 @@ resource "aws_lb" "app" {
   tags               = local.tags
 }
 
+
 # Listener for HTTP (80)
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
@@ -385,7 +387,6 @@ resource "aws_lb_listener" "http" {
 }
 
 # Listener for HTTPS (443) - requires ACM cert - currently not working
-/*
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.app.arn
   port              = 443
