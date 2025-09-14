@@ -197,6 +197,16 @@ resource "aws_security_group" "db" {
   tags = local.tags
 }
 
+resource "aws_security_group_rule" "db_from_vpc" {
+  type              = "ingress"
+  security_group_id = aws_security_group.db.id
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = [module.vpc.vpc_cidr_block]
+  description       = "Allow Postgres from VPC"
+}
+
 resource "aws_security_group_rule" "db_from_eks_cluster_sg" {
   type                     = "ingress"
   security_group_id        = aws_security_group.db.id
