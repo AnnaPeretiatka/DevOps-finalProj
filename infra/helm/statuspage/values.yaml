@@ -25,10 +25,12 @@ resources:
 # Most overridden by --set env.* at deploy time
 env:
   DJANGO_SETTINGS_MODULE: statuspage.settings
+  STATUS_PAGE_CONFIGURATION: statuspage.configuration
+  STATUS_HOSTNAME: ""
   ALLOWED_HOSTS: ""
   SECRET_KEY: ""
   DATABASE_URL: ""
-  REDIS_URL: ""
+  REDIS_URL: "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"
 
 service: { 
   port: 8000

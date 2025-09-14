@@ -1,6 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: { name: statuspage-config, namespace: statuspage }
+metadata:
+  name: statuspage-config
+  namespace: statuspage
 data:
   DJANGO_SETTINGS_MODULE: "{{ .Values.env.DJANGO_SETTINGS_MODULE }}"
+  STATUS_PAGE_CONFIGURATION: "{{ .Values.env.STATUS_PAGE_CONFIGURATION }}"
+  STATUS_HOSTNAME: "{{ .Values.env.STATUS_HOSTNAME }}"
   ALLOWED_HOSTS: "{{ .Values.env.ALLOWED_HOSTS }}"
+  REDIS_URL: "{{ .Values.env.REDIS_URL }}"
