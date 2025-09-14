@@ -175,10 +175,11 @@ module "db" {
   subnet_ids               = module.vpc.private_subnets
   vpc_security_group_ids   = [aws_security_group.db.id]
   backup_window            = "02:00-03:00"
-  max_allocated_storage = 100
+  max_allocated_storage    = 100
   maintenance_window       = "Mon:03:00-Mon:04:00"
   deletion_protection      = false
   skip_final_snapshot      = true
+  apply_immediately        = true
   tags                     = local.tags
 }
 
