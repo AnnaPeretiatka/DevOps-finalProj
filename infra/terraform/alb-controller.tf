@@ -102,13 +102,31 @@ resource "helm_release" "alb" {
   # version   = "1.9.0" # (optional) pin a version if you want
 
   # Cluster details
-  set { name = "clusterName"; value = module.eks.cluster_name }
-  set { name = "region";      value = var.aws_region }
-  set { name = "vpcId";       value = module.vpc.vpc_id }
+  set {
+    name = "clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set { 
+    name = "region"
+    value = var.aws_region 
+  }
+
+  set { 
+    name = "vpcId"
+    value = module.vpc.vpc_id
+  }
 
   # ServiceAccount managed by Helm
-  set { name = "serviceAccount.create"; value = "true" }
-  set { name = "serviceAccount.name";   value = "aws-load-balancer-controller" }
+  set { 
+    name = "serviceAccount.create"
+    value = "true"
+  }
+
+  set { 
+    name = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
 
   # IRSA annotation: need to escape the dots in the key for Terraform
   set {
