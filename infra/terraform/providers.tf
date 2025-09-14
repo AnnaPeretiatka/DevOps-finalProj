@@ -1,6 +1,8 @@
 provider "aws" { 
     region = var.aws_region
 }
+
+# Read EKS cluster endpoint/CA and a short-lived auth token
 data "aws_eks_cluster" "this" {
   name = module.eks.cluster_name
 }
