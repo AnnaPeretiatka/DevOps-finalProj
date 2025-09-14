@@ -1,1 +1,1 @@
-db_password = "status"
+db_password = "Status123!"
