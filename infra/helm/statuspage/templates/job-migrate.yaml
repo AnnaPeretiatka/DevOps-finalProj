@@ -12,7 +12,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
           command: ["python","statuspage/manage.py","migrate","--noinput"]
           envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
 {{- end }}

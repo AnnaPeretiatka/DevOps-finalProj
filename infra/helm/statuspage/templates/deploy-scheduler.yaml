@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: scheduler
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python","statuspage/manage.py","rqscheduler"]
           envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
