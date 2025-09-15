@@ -9,7 +9,7 @@ resource "aws_route53_zone" "this" {
 }
 
 # Register/purchase the domain
-resource "aws_route53domains_registered_domain" "this" {
+resource "aws_route53domains_domain" "this" {
   provider    = aws.use1
   domain_name = var.domain_name
   auto_renew  = false
