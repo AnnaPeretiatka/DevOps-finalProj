@@ -91,7 +91,6 @@ output "status_hostname" {
 # ------------------------------------- DNS records -> Ingress/ALB -------------------------------------
 
 # Make sure the Ingress exists (helm upgrade/install) BEFORE terraform apply.
-
 resource "time_sleep" "wait_for_alb" {
   create_duration = "60s"
   depends_on      = [helm_release.statuspage]
@@ -105,29 +104,38 @@ data "kubernetes_ingress_v1" "statuspage" {
   depends_on = [time_sleep.wait_for_alb]
 }
 
-# CNAME: lb.<domain> -> the ALB DNS from Ingress status
+# Parse ALB name from the Ingress hostname (k8s-... from k8s-....elb.amazonaws.com)
+locals {
+  alb_hostname = data.kubernetes_ingress_v1.statuspage.status[0].load_balancer[0].ingress[0].hostname
+  alb_name     = split(".", local.alb_hostname)[0]
+}
+
+# Look up the ALB to get its canonical hosted zone id
+data "aws_lb" "ingress" {
+  name = local.alb_name
+  depends_on = [time_sleep.wait_for_alb]
+}
+
+# CNAME: lb.<domain> -> ALB DNS from Ingress status (CNAME)
 resource "aws_route53_record" "lb_cname" {
   zone_id = aws_route53_zone.this.zone_id
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
   ttl     = 60
+  records = [local.alb_hostname]
 
-  records = [
-    data.kubernetes_ingress_v1.statuspage.status[0].load_balancer[0].ingress[0].hostname
-  ]
-
-  depends_on = [aws_route53_zone.this]
+  depends_on = [data.kubernetes_ingress_v1.statuspage, time_sleep.wait_for_alb]
 }
 
-# A/ALIAS at root -> our lb.<domain> record
+# A/ALIAS at root -> ALB
 resource "aws_route53_record" "root_alias" {
   zone_id = aws_route53_zone.this.zone_id
   name    = var.domain_name
   type    = "A"
 
   alias {
-    name                   = aws_route53_record.lb_cname.fqdn
-    zone_id                = aws_route53_zone.this.zone_id
+    name                   = data.aws_lb.ingress.dns_name
+    zone_id                = data.aws_lb.ingress.zone_id
     evaluate_target_health = false
   }
 
