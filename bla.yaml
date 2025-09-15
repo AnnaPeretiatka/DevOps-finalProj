@@ -1,0 +1,50 @@
+cat > settings-dbg.yaml <<'YAML'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: settings-dbg
+  namespace: statuspage
+spec:
+  restartPolicy: Never
+  containers:
+  - name: dbg
+    image: 992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo:first
+    command: ["/bin/sh","-lc"]
+    args:
+      - |
+        echo "=== Raw env (filtered) ==="
+        env | sort | grep -E '^(DATABASE_URL|DB_|PGSSL|DJANGO_SETTINGS_MODULE|STATUS_HOSTNAME|ALLOWED_HOSTS)=' || true
+
+        echo
+        echo "=== Django settings.DATABASES ==="
+        python - <<'PY'
+        import os, json
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.getenv("DJANGO_SETTINGS_MODULE","statuspage.settings"))
+        import django
+        django.setup()
+        from django.conf import settings
+        print(json.dumps(settings.DATABASES, default=str, indent=2))
+        PY
+
+        echo
+        echo "=== psycopg2 connect test (DATABASE_URL) ==="
+        python - <<'PY'
+        import os, sys
+        url = os.getenv("DATABASE_URL")
+        print("DATABASE_URL:", url)
+        try:
+            import psycopg2
+            conn = psycopg2.connect(url)
+            cur = conn.cursor(); cur.execute("select 1"); print("select 1 ->", cur.fetchone())
+            conn.close()
+            print("psycopg2 connect OK")
+        except Exception as e:
+            print("psycopg2 connect FAILED:", e)
+            sys.exit(1)
+        PY
+    envFrom:
+    - secretRef:
+        name: statuspage-secrets
+    - configMapRef:
+        name: statuspage-config
+YAML
