@@ -107,16 +107,17 @@ data "kubernetes_ingress_v1" "statuspage" {
 # Parse ALB name from the Ingress hostname (k8s-... from k8s-....elb.amazonaws.com)
 locals {
   alb_hostname = data.kubernetes_ingress_v1.statuspage.status[0].load_balancer[0].ingress[0].hostname
-  alb_name     = split(".", local.alb_hostname)[0]
+  alb_label    = split(".", local.alb_hostname)[0]                # k8s-...-3cbb543552-303246783
+  alb_name     = regexreplace(local.alb_label, "-[0-9]+$", "")    # -unique for <= 32 chars
 }
 
-# Look up the ALB to get its canonical hosted zone id
+# get ALB - dns_name + original hosted zone id
 data "aws_lb" "ingress" {
   name = local.alb_name
   depends_on = [time_sleep.wait_for_alb]
 }
 
-# CNAME: lb.<domain> -> ALB DNS from Ingress status (CNAME)
+# lb.<domain> -> ALB DNS from Ingress status (CNAME)
 resource "aws_route53_record" "lb_cname" {
   zone_id = aws_route53_zone.this.zone_id
   name    = "lb.${var.domain_name}"
@@ -138,7 +139,6 @@ resource "aws_route53_record" "root_alias" {
     zone_id                = data.aws_lb.ingress.zone_id
     evaluate_target_health = false
   }
-
   depends_on = [aws_route53_record.lb_cname]
 }
 
