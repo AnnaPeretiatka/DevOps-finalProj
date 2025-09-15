@@ -41,22 +41,50 @@ resource "helm_release" "statuspage" {
   }
 
   # Core env
-  set { name = "env.SECRET_KEY"        value = var.secret_key }
-  set { name = "env.REDIS_URL"         value = var.redis_url }
-  set { name = "env.STATUS_HOSTNAME"   value = var.domain_name }
-  set { name = "env.ALLOWED_HOSTS"     value = "*" }
+  set {
+    name = "env.SECRET_KEY"
+    value = var.secret_key
+  }
+  set {
+    name = "env.REDIS_URL"
+    value = var.redis_url
+  }
+  set {
+    name = "env.STATUS_HOSTNAME"
+    value = var.domain_name
+  }
+  set {
+    name = "env.ALLOWED_HOSTS" 
+    value = "*"
+  }
 
   # Ingress basics
-  set { name = "ingress.enabled"       value = "true" }
-  set { name = "ingress.className"     value = "alb" }
-  set { name = "ingress.hosts[0].host" value = var.domain_name }
-  set { name = "ingress.hosts[0].paths[0].path"     value = "/" }
-  set { name = "ingress.hosts[0].paths[0].pathType" value = "Prefix" }
+  set {
+    name = "ingress.enabled" 
+    value = "true"
+  }
+  set {
+    name = "ingress.className"
+    value = "alb"
+  }
+  set {
+    name = "ingress.hosts[0].host"
+    value = var.domain_name
+  }
+  set {
+    name = "ingress.hosts[0].paths[0].path"
+    value = "/"
+  }
+  set {
+    name = "ingress.hosts[0].paths[0].pathType"
+    value = "Prefix"
+  }
 
   # app chart only installs after nodes exist and the ALB controller is ready
+  # nodes ready so Pods can schedule | ALB controller watches Ingress | DB ready (its address resolves)
   depends_on = [
-    aws_eks_node_group.default,      # nodes ready so Pods can schedule
-    helm_release.alb,                # ALB controller watches Ingress
-    module.db                        # DB ready (its address resolves)
+    aws_eks_node_group.default,   
+    helm_release.alb,
+    module.db               
   ]
 }
