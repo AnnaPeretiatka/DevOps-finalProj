@@ -17,7 +17,11 @@ resource "helm_release" "statuspage" {
   name             = "statuspage"
   namespace        = "statuspage"
   create_namespace = true
-  chart            = "../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
+  chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
+
+  timeout          = 900          # 15 minutes
+  wait_for_jobs    = true         # wait for migrate/collectstatic to finish
+  atomic           = true
 
   # Image
   set {
