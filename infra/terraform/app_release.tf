@@ -28,12 +28,12 @@ resource "helm_release" "statuspage" {
   force_update   = false
   recreate_pods  = false
   dependency_update = true
-
+  /*
   # make sure controller is up before we install the Ingress
   depends_on = [
     helm_release.alb_controller
   ]
-
+  */
   # ---------------------------- image.* 
   set {
     name  = "image.repository"

@@ -23,10 +23,10 @@ spec:
       containers:
         - name: worker
           image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["celery"]
-          args: ["-A","statuspage","worker","-l","info","--pool=solo"]
+          #command: ["celery"]
+          #args: ["-A","statuspage","worker","-l","info","--pool=solo"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          #command: ["python","statuspage/manage.py","rqworker","high","default","low"]
+          command: ["python","statuspage/manage.py","rqworker","high","default","low"]
           envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
           startupProbe:
             exec:
