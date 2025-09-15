@@ -178,7 +178,7 @@ module "db" {
   maintenance_window       = "Mon:03:00-Mon:04:00"
   deletion_protection      = false
   skip_final_snapshot      = true
-  apply_immediately        = true
+  apply_immediately        = false
   tags                     = local.tags
 }
 
