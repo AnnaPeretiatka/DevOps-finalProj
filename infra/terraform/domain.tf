@@ -48,9 +48,9 @@ resource "aws_route53domains_registered_domain" "this" {
     country_code    = local.dc.country_code
   }
 
-  privacy_protect_admin_contact      = true
-  privacy_protect_registrant_contact = true
-  privacy_protect_tech_contact       = true
+  admin_privacy      = true
+  registrant_privacy = true
+  tech_privacy       = true
 
   # Point registrar at the hosted zone name servers
   dynamic "name_server" {
