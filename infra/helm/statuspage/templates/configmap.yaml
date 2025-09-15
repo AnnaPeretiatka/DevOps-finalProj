@@ -4,12 +4,23 @@ metadata:
   name: statuspage-config
   namespace: statuspage
 data:
-  DJANGO_SETTINGS_MODULE: "{{ .Values.env.DJANGO_SETTINGS_MODULE }}"
-  STATUS_PAGE_CONFIGURATION: "{{ .Values.env.STATUS_PAGE_CONFIGURATION }}"
-  REDIS_URL: "{{ .Values.env.REDIS_URL }}"
-  {{- if .Values.env.STATUS_HOSTNAME }}
-  STATUS_HOSTNAME: "{{ .Values.env.STATUS_HOSTNAME }}"
-  {{- end }}
-  {{- if .Values.env.ALLOWED_HOSTS }}
-  ALLOWED_HOSTS: "{{ .Values.env.ALLOWED_HOSTS }}"
-  {{- end }}
+  DJANGO_SETTINGS_MODULE: {{ .Values.env.DJANGO_SETTINGS_MODULE | quote }}
+  STATUS_PAGE_CONFIGURATION: {{ .Values.env.STATUS_PAGE_CONFIGURATION | quote }}
+  STATUS_HOSTNAME: {{ .Values.env.STATUS_HOSTNAME | quote }}
+  REDIS_URL: {{ .Values.env.REDIS_URL | quote }}
+  ALLOWED_HOSTS: {{ .Values.env.ALLOWED_HOSTS | quote }}
+
+  # Export discrete DB settings too (non-secret pieces)
+  DB_HOST: {{ .Values.env.db.host | quote }}
+  DB_PORT: {{ .Values.env.db.port | quote }}
+  DB_NAME: {{ .Values.env.db.name | quote }}
+  DB_USER: {{ .Values.env.db.user | quote }}
+
+  # libpq/psycopg can also read these generic PG* envs
+  PGHOST: {{ .Values.env.db.host | quote }}
+  PGPORT: {{ .Values.env.db.port | quote }}
+  PGDATABASE: {{ .Values.env.db.name | quote }}
+  PGUSER: {{ .Values.env.db.user | quote }}
+
+  # Hint SSL even if the app ignores DATABASE_URL
+  PGSSLMODE: "require"

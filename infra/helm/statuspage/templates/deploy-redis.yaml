@@ -1,6 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: statuspage-redis, namespace: statuspage }
+metadata: {
+  name: statuspage-redis,
+  namespace: statuspage
+}
 spec:
   replicas: 1
   selector: { matchLabels: { app: statuspage, tier: redis } }
@@ -15,7 +18,10 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: statuspage-redis, namespace: statuspage }
+metadata: {
+  name: statuspage-redis,
+  namespace: statuspage
+}
 spec:
   selector: { app: statuspage, tier: redis }
   ports: [{ name: redis, port: 6379, targetPort: 6379 }]
