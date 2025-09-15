@@ -107,13 +107,15 @@ data "kubernetes_ingress_v1" "statuspage" {
 # Parse ALB name from the Ingress hostname (k8s-... from k8s-....elb.amazonaws.com)
 locals {
   alb_hostname = data.kubernetes_ingress_v1.statuspage.status[0].load_balancer[0].ingress[0].hostname
-  alb_label    = split(".", local.alb_hostname)[0]                # k8s-...-3cbb543552-303246783
-  alb_name     = regexreplace(local.alb_label, "-[0-9]+$", "")    # -unique for <= 32 chars
+  alb_label    = split(".", local.alb_hostname)[0]                                      # k8s-...-3cbb543552-303246783
+  alb_suffix_list = regexall("-[0-9]+$", local.alb_label)                               # ["-303246783"]
+  alb_suffix      = length(local.alb_suffix_list) > 0 ? local.alb_suffix_list[0] : ""
+  alb_name        = replace(local.alb_label, local.alb_suffix, "")                      # k8s-statuspa-statuspa-3cbb543552
 }
 
 # get ALB - dns_name + original hosted zone id
 data "aws_lb" "ingress" {
-  name = local.alb_name
+  name       = local.alb_name
   depends_on = [time_sleep.wait_for_alb]
 }
 
