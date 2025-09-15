@@ -32,6 +32,13 @@ env:
   DATABASE_URL: ""
   REDIS_URL: "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"
 
+  db:
+    host: ""           
+    port: 5432
+    name: "statuspage" 
+    user: "statuspage" 
+    password: "" 
+
 service: { 
   port: 8000
 }
@@ -45,7 +52,7 @@ ingress:
     healthcheck_path: /
   }
   hosts:
-    - host: example.com    # will be overridden via --set ingress.hosts[0].host
+    - host: ""    # will be overridden via --set ingress.hosts[0].host
       paths:
         - path: /
           pathType: Prefix

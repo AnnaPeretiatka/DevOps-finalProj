@@ -32,10 +32,22 @@ spec:
           envFrom:
             - secretRef: { name: statuspage-secrets }
             - configMapRef: { name: statuspage-config }
-          readinessProbe: {
-            httpGet: { path: "/", port: {{ .Values.service.port }} },
-            initialDelaySeconds: 5,
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              httpHeaders:
+                - name: Host
+                  value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
+            initialDelaySeconds: 5
             periodSeconds: 10
-          }
-          livenessProbe:  { httpGet: { path: "/", port: 8000 }, initialDelaySeconds: 20, periodSeconds: 20 }
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              httpHeaders:
+                - name: Host
+                  value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
           resources: {{- toYaml .Values.resources.web | nindent 12 }}

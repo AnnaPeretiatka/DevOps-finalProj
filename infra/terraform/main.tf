@@ -167,7 +167,6 @@ module "db" {
   allocated_storage        = var.db_allocated_storage
   db_name                  = "statuspage"
   username                 = var.db_username
-  password                 = var.db_password
   port                     = 5432
   multi_az                 = var.db_multi_az
   publicly_accessible      = false

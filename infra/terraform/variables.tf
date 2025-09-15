@@ -38,10 +38,6 @@ variable "db_username" {
     default = "statuspage"
 }
 
-variable "db_password" { 
-    type = string
-}
-
 variable "db_allocated_storage" { 
     type = number
     default = 20
@@ -61,3 +57,9 @@ variable "subdomain" {
     type = string
     default = "status-page-ay"
 }
+
+/*
+variable "db_password" { 
+    type = string
+}
+*/
