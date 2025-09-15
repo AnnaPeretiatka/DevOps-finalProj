@@ -73,3 +73,5 @@ migrations:
 
 collectstatic:
   enabled: true
+
+manageNamespace: false
