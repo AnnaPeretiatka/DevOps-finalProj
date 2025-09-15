@@ -52,7 +52,7 @@ ingress:
     healthcheck_path: /
   }
   hosts:
-    - host: ""    # will be overridden via --set ingress.hosts[0].host
+    - host: status-page-ay.ay.com
       paths:
         - path: /
           pathType: Prefix
