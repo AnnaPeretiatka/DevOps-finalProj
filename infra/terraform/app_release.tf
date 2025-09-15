@@ -19,20 +19,22 @@ resource "helm_release" "statuspage" {
   create_namespace = true
   chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
 
-  timeout          = 600          # 10 minutes
-  wait_for_jobs    = true         # wait for migrate/collectstatic to finish
-  atomic           = true
-
+  wait             = false
+  timeout          = 300          # 5 minutes
+  wait_for_jobs    = false         # don't wait for migrate/collectstatic to finish
+  atomic           = false
+/*
   # ensure we actually roll the deployment even if Helm thinks nothing changed
-  force_update   = true
-  recreate_pods  = true
+  force_update   = false
+  recreate_pods  = false
+  dependency_update = true
 
-  set {
-    name  = "image.pullPolicy"
-    value = "Always"
-  }
-
-  # Image
+  # make sure controller is up before we install the Ingress
+  depends_on = [
+    helm_release.alb_controller
+  ]
+*/
+  # ---------------------------- image.* 
   set {
     name  = "image.repository"
     value = aws_ecr_repository.app.repository_url
@@ -41,6 +43,26 @@ resource "helm_release" "statuspage" {
     name  = "image.tag"
     value = "first"
   }
+
+  # -------------------------- Core env
+  set {
+    name = "env.SECRET_KEY"
+    value = var.secret_key
+  }
+  set {
+    name = "env.REDIS_URL"
+    value = "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"
+  }
+  set {
+    name = "env.STATUS_HOSTNAME"
+    value = "status-page-ay.com"
+  }
+  set {
+    name = "env.ALLOWED_HOSTS" 
+    value = "*"
+  }
+
+  # ---------------------------- DB
   set_sensitive {
     name  = "env.DATABASE_URL"
     value = format(
@@ -53,25 +75,16 @@ resource "helm_release" "statuspage" {
     )
   }
 
-  # Core env
-  set {
-    name = "env.SECRET_KEY"
-    value = var.secret_key
+  set { name = "env.db.host" value = module.db.db_instance_address }
+  set { name = "env.db.port" value = module.db.db_instance_port }
+  set { name = "env.db.name" value = module.db.db_instance_name }
+  set { name = "env.db.user" value = var.db_username }
+  set_sensitive {
+    name  = "env.db.password"
+    value = local.db_pass
   }
-  set {
-    name = "env.REDIS_URL"
-    value = var.redis_url
-  }
-  set {
-    name = "env.STATUS_HOSTNAME"
-    value = var.domain_name
-  }
-  set {
-    name = "env.ALLOWED_HOSTS" 
-    value = "*"
-  }
-
-  # Ingress basics
+  
+  # ---------------------------- Ingress
   set {
     name = "ingress.enabled" 
     value = "true"
@@ -82,7 +95,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name = "ingress.hosts[0].host"
-    value = var.domain_name
+    value = "status-page-ay.com"
   }
   set {
     name = "ingress.hosts[0].paths[0].path"
