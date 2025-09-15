@@ -1,0 +1,62 @@
+# Get the DB instance (to find its managed master-user secret)
+data "aws_db_instance" "pg" {
+  db_instance_identifier = module.db.db_instance_identifier
+}
+
+# Read the current password from Secrets Manager (JSON)
+data "aws_secretsmanager_secret_version" "pg_master" {
+  secret_id = data.aws_db_instance.pg.master_user_secret[0].secret_arn
+}
+
+locals {
+  db_secret = jsondecode(data.aws_secretsmanager_secret_version.pg_master.secret_string)
+  db_pass   = local.db_secret.password
+}
+
+resource "helm_release" "statuspage" {
+  name             = "statuspage"
+  namespace        = "statuspage"
+  create_namespace = true
+  chart            = "../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
+
+  # Image
+  set {
+    name  = "image.repository"
+    value = aws_ecr_repository.app.repository_url
+  }
+  set {
+    name  = "image.tag"
+    value = "first"
+  }
+  set_sensitive {
+    name  = "env.DATABASE_URL"
+    value = format(
+        "postgresql://%s:%s@%s:%s/%s?sslmode=require",
+        var.db_username,
+        urlencode(local.db_pass),
+        module.db.db_instance_address,
+        module.db.db_instance_port,
+        module.db.db_instance_name
+    )
+  }
+
+  # Core env
+  set { name = "env.SECRET_KEY"        value = var.secret_key }
+  set { name = "env.REDIS_URL"         value = var.redis_url }
+  set { name = "env.STATUS_HOSTNAME"   value = var.domain_name }
+  set { name = "env.ALLOWED_HOSTS"     value = "*" }
+
+  # Ingress basics
+  set { name = "ingress.enabled"       value = "true" }
+  set { name = "ingress.className"     value = "alb" }
+  set { name = "ingress.hosts[0].host" value = var.domain_name }
+  set { name = "ingress.hosts[0].paths[0].path"     value = "/" }
+  set { name = "ingress.hosts[0].paths[0].pathType" value = "Prefix" }
+
+  # app chart only installs after nodes exist and the ALB controller is ready
+  depends_on = [
+    aws_eks_node_group.default,      # nodes ready so Pods can schedule
+    helm_release.alb,                # ALB controller watches Ingress
+    module.db                        # DB ready (its address resolves)
+  ]
+}

@@ -135,7 +135,9 @@ resource "helm_release" "alb" {
   }
 
   # Ensure IAM bits exist before install
+  #chart doesn’t install before a schedulable node exists
   depends_on = [
-    aws_iam_role_policy_attachment.alb_attach
+    aws_iam_role_policy_attachment.alb_attach,
+    aws_eks_node_group.default  
   ]
 }

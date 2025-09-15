@@ -157,29 +157,30 @@ resource "aws_eks_addon" "coredns" {
 # --------------------------------------------- DB-RDS ---------------------------------------
 
 module "db" {
-  source                   = "terraform-aws-modules/rds/aws"
-  version                  = "~> 6.5"
-  identifier               = "${var.project_name}-pg"
-  engine                   = "postgres"
-  engine_version           = "16"
-  family                   = "postgres16"
-  instance_class           = "db.t4g.micro"
-  allocated_storage        = var.db_allocated_storage
-  db_name                  = "statuspage"
-  username                 = var.db_username
-  port                     = 5432
-  multi_az                 = var.db_multi_az
-  publicly_accessible      = false
-  create_db_subnet_group   = true
-  subnet_ids               = module.vpc.private_subnets
-  vpc_security_group_ids   = [aws_security_group.db.id]
-  backup_window            = "02:00-03:00"
-  max_allocated_storage    = 100
-  maintenance_window       = "Mon:03:00-Mon:04:00"
-  deletion_protection      = false
-  skip_final_snapshot      = true
-  apply_immediately        = false
-  tags                     = local.tags
+  source                        = "terraform-aws-modules/rds/aws"
+  version                       = "~> 6.5"
+  identifier                    = "${var.project_name}-pg"
+  engine                        = "postgres"
+  engine_version                = "16"
+  family                        = "postgres16"
+  instance_class                = "db.t4g.micro"
+  allocated_storage             = var.db_allocated_storage
+  db_name                       = "statuspage"
+  username                      = var.db_username
+  port                          = 5432
+  multi_az                      = var.db_multi_az
+  publicly_accessible           = false
+  create_db_subnet_group        = true
+  subnet_ids                    = module.vpc.private_subnets
+  vpc_security_group_ids        = [aws_security_group.db.id]
+  backup_window                 = "02:00-03:00"
+  max_allocated_storage         = 100
+  maintenance_window            = "Mon:03:00-Mon:04:00"
+  deletion_protection           = false
+  skip_final_snapshot           = true
+  apply_immediately             = false
+  manage_master_user_password   = true
+  tags                          = local.tags
 }
 
 resource "aws_security_group" "db" {

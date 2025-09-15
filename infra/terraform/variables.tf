@@ -59,6 +59,17 @@ variable "register_domain" {
   default     = false
 }
 
+variable "secret_key" {
+  type = string
+  description = "Django SECRET_KEY"
+}
+
+variable "redis_url" {
+  type        = string
+  description = "Redis connection URL"
+  default     = "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"
+}
+
 variable "domain_contact" {
   description = "Contact used for admin/registrant/tech (all three). Phone in E.164 (e.g., +972...)."
   type = object({
@@ -76,13 +87,3 @@ variable "domain_contact" {
   })
 }
 
-/*
-variable "subdomain" { 
-    type = string
-    default = "status-page-ay"
-}
-
-variable "db_password" { 
-    type = string
-}
-*/
