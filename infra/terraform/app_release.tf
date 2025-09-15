@@ -19,9 +19,18 @@ resource "helm_release" "statuspage" {
   create_namespace = true
   chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
 
-  timeout          = 900          # 15 minutes
+  timeout          = 600          # 10 minutes
   wait_for_jobs    = true         # wait for migrate/collectstatic to finish
   atomic           = true
+
+  # ensure we actually roll the deployment even if Helm thinks nothing changed
+  force_update   = true
+  recreate_pods  = true
+
+  set {
+    name  = "image.pullPolicy"
+    value = "Always"
+  }
 
   # Image
   set {
