@@ -218,12 +218,12 @@ resource "aws_security_group_rule" "db_from_eks_cluster_sg" {
 }
 
 # --------------------------------------------- Route53 ----------------------------------------------
-
+/*
 resource "aws_route53_zone" "this" {
   name = var.domain_name
   tags = local.tags
 }
-
+*/
 # ---------------------------- ACM_certificate - not prmissions error -------------------------------
 
 /*
