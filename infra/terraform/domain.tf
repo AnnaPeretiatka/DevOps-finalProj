@@ -2,16 +2,16 @@ locals {
   dc = var.domain_contact
 }
 
-admin_privacy      = true
-  registrant_privacy = true
-  tech_privacy       = true
-  billing_privacy    = true
-
 # Register/purchase the domain
 resource "aws_route53domains_domain" "this" {
   provider    = aws.use1
   domain_name = var.domain_name
   auto_renew  = false
+
+  admin_privacy      = true
+  registrant_privacy = true
+  tech_privacy       = true
+  billing_privacy    = true
 
   # Use of same contact for all three roles
   admin_contact {
