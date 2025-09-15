@@ -7,8 +7,9 @@ domain_contact = {
   last_name      = "Peretiatka"
   contact_type   = "PERSON"
   email          = "annaperetiatka@gmail.com"
-  phone_number   = "+972526553432"
+  phone_number   = "+972.526553432"
   address_line_1 = "3 Kaplan St"
   city           = "Tel-Aviv"
   country_code   = "IL"
+  zip_code       = "6777801"
 }

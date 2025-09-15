@@ -2,11 +2,10 @@ locals {
   dc = var.domain_contact
 }
 
-# Public hosted zone for the domain
-resource "aws_route53_zone" "this" {
-  name = var.domain_name
-  tags = local.tags
-}
+admin_privacy      = true
+  registrant_privacy = true
+  tech_privacy       = true
+  billing_privacy    = true
 
 # Register/purchase the domain
 resource "aws_route53domains_domain" "this" {
@@ -24,6 +23,7 @@ resource "aws_route53domains_domain" "this" {
     address_line_1  = local.dc.address_line_1
     city            = local.dc.city
     country_code    = local.dc.country_code
+    zip_code       = local.dc.zip_code
   }
 
   registrant_contact {
@@ -35,6 +35,7 @@ resource "aws_route53domains_domain" "this" {
     address_line_1  = local.dc.address_line_1
     city            = local.dc.city
     country_code    = local.dc.country_code
+    zip_code       = local.dc.zip_code
   }
 
   tech_contact {
@@ -46,11 +47,21 @@ resource "aws_route53domains_domain" "this" {
     address_line_1  = local.dc.address_line_1
     city            = local.dc.city
     country_code    = local.dc.country_code
+    zip_code       = local.dc.zip_code
   }
 
-  admin_privacy      = true
-  registrant_privacy = true
-  tech_privacy       = true
+  billing_contact {
+    first_name     = local.dc.first_name
+    last_name      = local.dc.last_name
+    contact_type   = local.dc.contact_type
+    email          = local.dc.email
+    phone_number   = local.dc.phone_number
+    address_line_1 = local.dc.address_line_1
+    city           = local.dc.city
+    country_code   = local.dc.country_code
+    zip_code       = local.dc.zip_code
+  }
+
 
   # Point registrar at the hosted zone name servers
   dynamic "name_server" {
@@ -63,7 +74,7 @@ resource "aws_route53domains_domain" "this" {
   tags = local.tags
 }
 
-# Helpful outputs
+# outputs
 output "route53_zone_id" {
   value = aws_route53_zone.this.zone_id
 }
