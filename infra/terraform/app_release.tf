@@ -37,7 +37,7 @@ resource "helm_release" "statuspage" {
   # ---------------------------- image.* 
   set {
     name  = "image.repository"
-    value = 992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo
+    value = "992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo"
   }
   set {
     name  = "image.tag"
