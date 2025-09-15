@@ -19,11 +19,11 @@ resource "helm_release" "statuspage" {
   create_namespace = true
   chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
 
-  wait             = false
+  wait             = true
   timeout          = 300          # 5 minutes
-  wait_for_jobs    = false         # don't wait for migrate/collectstatic to finish
+  wait_for_jobs    = true         # don't wait for migrate/collectstatic to finish
   atomic           = false
-/*
+
   # ensure we actually roll the deployment even if Helm thinks nothing changed
   force_update   = false
   recreate_pods  = false
@@ -33,7 +33,7 @@ resource "helm_release" "statuspage" {
   depends_on = [
     helm_release.alb_controller
   ]
-*/
+
   # ---------------------------- image.* 
   set {
     name  = "image.repository"
