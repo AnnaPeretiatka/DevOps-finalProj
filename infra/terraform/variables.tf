@@ -53,12 +53,6 @@ variable "domain_name" {
     type = string
 }
 
-variable "register_domain" {
-  description = "If true, Terraform will purchase/register the domain"
-  type        = bool
-  default     = false
-}
-
 variable "secret_key" {
   type = string
   description = "Django SECRET_KEY"
@@ -71,7 +65,7 @@ variable "redis_url" {
 }
 
 variable "domain_contact" {
-  description = "Contact used for admin/registrant/tech (all three). Phone in E.164 (e.g., +972...)."
+  description = "Contact used for admin/registrant/tech (all three)"
   type = object({
     first_name     : string
     last_name      : string

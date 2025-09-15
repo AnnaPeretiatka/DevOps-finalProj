@@ -1,6 +1,6 @@
 # this is not in the variables.tf so won't be used by anyone cloaning the repo
 domain_name     = "status-page-ay.com"
-register_domain = true
+#register_domain = true
 
 domain_contact = {
   first_name     = "Anna"

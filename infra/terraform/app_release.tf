@@ -37,7 +37,7 @@ resource "helm_release" "statuspage" {
   # ---------------------------- image.* 
   set {
     name  = "image.repository"
-    value = aws_ecr_repository.app.repository_url
+    value = 992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo
   }
   set {
     name  = "image.tag"
@@ -75,10 +75,22 @@ resource "helm_release" "statuspage" {
     )
   }
 
-  set { name = "env.db.host" value = module.db.db_instance_address }
-  set { name = "env.db.port" value = module.db.db_instance_port }
-  set { name = "env.db.name" value = module.db.db_instance_name }
-  set { name = "env.db.user" value = var.db_username }
+  set { 
+    name = "env.db.host" 
+    value = module.db.db_instance_address 
+  }
+  set { 
+    name = "env.db.port" 
+    value = module.db.db_instance_port 
+  }
+  set { 
+    name = "env.db.name" 
+    value = module.db.db_instance_name 
+  }
+  set { 
+    name = "env.db.user" 
+    value = var.db_username 
+  }
   set_sensitive {
     name  = "env.db.password"
     value = local.db_pass

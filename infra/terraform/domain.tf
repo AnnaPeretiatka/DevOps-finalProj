@@ -4,9 +4,11 @@ locals {
 
 # Register/purchase the domain
 resource "aws_route53domains_domain" "this" {
+  #count       = var.register_domain ? 1 : 0
   provider    = aws.use1
   domain_name = var.domain_name
   auto_renew  = false
+  lifecycle { prevent_destroy = true }
 
   admin_privacy      = true
   registrant_privacy = true

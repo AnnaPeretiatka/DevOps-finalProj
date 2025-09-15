@@ -52,7 +52,7 @@ ingress:
     healthcheck_path: /
   }
   hosts:
-    - host: status-page-ay.ay.com
+    - host: status-page-ay.com
       paths:
         - path: /
           pathType: Prefix

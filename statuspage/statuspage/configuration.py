@@ -19,7 +19,7 @@ else:
     # Fall back to your original values (good for local/dev)
     ALLOWED_HOSTS = ['*']
     # Define the URL which will be used e.g. in E-Mails
-    SITE_URL = "http://status-page-ay.ay.com"
+    SITE_URL = "http://status-page-ay.com"
 
 # PostgreSQL database configuration. See the Django documentation for a complete list of available parameters:
 #   https://docs.djangoproject.com/en/stable/ref/settings/#databases
