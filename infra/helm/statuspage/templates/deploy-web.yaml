@@ -34,16 +34,17 @@ spec:
             - configMapRef: { name: statuspage-config }
           readinessProbe:
             httpGet:
-              path: /
+              path: /static/ 
               port: 8000
               httpHeaders:
                 - name: Host
                   value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
             initialDelaySeconds: 5
             periodSeconds: 10
+            failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /
+              path: /static/ 
               port: 8000
               httpHeaders:
                 - name: Host
