@@ -34,7 +34,7 @@ spec:
             - configMapRef: { name: statuspage-config }
           readinessProbe:
             httpGet:
-              path: /static/ 
+              path: / 
               port: 8000
               httpHeaders:
                 - name: Host
@@ -44,7 +44,7 @@ spec:
             failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /static/ 
+              path: /
               port: 8000
               httpHeaders:
                 - name: Host

@@ -49,7 +49,7 @@ ingress:
   alb: {
     scheme: internet-facing,
     target_type: ip,
-    healthcheck_path: /static/
+    healthcheck_path: /
   }
   hosts:
     - host: status-page-ay.com
