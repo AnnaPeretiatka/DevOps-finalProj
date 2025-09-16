@@ -6,7 +6,7 @@ metadata:
   namespace: statuspage
   annotations:
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded,hook-failed
 spec:
   backoffLimit: 1
   activeDeadlineSeconds: 600
@@ -17,7 +17,16 @@ spec:
       containers:
         - name: migrate
           image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["python","statuspage/manage.py","migrate","--noinput"]
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z statuspage-redis 6379; do
+                echo "Waiting for redis..."
+                sleep 2
+              done
+              python statuspage/manage.py migrate --noinput
+          #command: ["python","statuspage/manage.py","migrate","--noinput"]
           envFrom:
             - secretRef:
                 name: statuspage-secrets
