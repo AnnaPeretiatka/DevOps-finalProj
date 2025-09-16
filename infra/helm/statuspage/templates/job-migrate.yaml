@@ -17,16 +17,7 @@ spec:
       containers:
         - name: migrate
           image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
-          command:
-            - sh
-            - -c
-            - |
-              until nc -z statuspage-redis 6379; do
-                echo "Waiting for redis..."
-                sleep 2
-              done
-              python statuspage/manage.py migrate --noinput
-          #command: ["python","statuspage/manage.py","migrate","--noinput"]
+          command: ["python","statuspage/manage.py","migrate","--noinput"]
           envFrom:
             - secretRef:
                 name: statuspage-secrets
