@@ -1,6 +1,6 @@
 image: { 
   repository: "", 
-  tag: latest, 
+  tag: rqfix-v1, 
   pullPolicy: IfNotPresent 
 }
 replicaCounts: { 

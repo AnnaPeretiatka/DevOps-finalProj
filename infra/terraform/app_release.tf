@@ -36,7 +36,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "image.tag"
-    value = "fixed"
+    value = "rqfix-v1"
   }
 
   # -------------------------- Core env
