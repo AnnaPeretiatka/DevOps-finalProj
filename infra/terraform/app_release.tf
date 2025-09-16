@@ -26,8 +26,8 @@ resource "helm_release" "statuspage" {
 
   # ensure we actually roll the deployment even if Helm thinks nothing changed
   force_update   = true
-  recreate_pods  = true
-  dependency_update = true
+  #recreate_pods  = true
+  #dependency_update = true
 
   # ---------------------------- image.* 
   set {
