@@ -8,7 +8,7 @@ django-mptt==0.14.0
 django-otp-yubikey==1.0.1
 django-otp==1.1.3
 django-redis==5.2.0
-django-rq==2.10.1
+django-rq==2.5.1
 django-tables2==2.4.1
 django==4.1.4
 django_browser_reload==1.6.0
@@ -22,8 +22,8 @@ mkdocs-autorefs==0.4.1
 netaddr==0.8.0
 phonenumbers==8.12.57
 psycopg2==2.9.5
-rq==1.15.1
-git+https://github.com/rq/rq-scheduler.git@master
+rq==1.9.0
+rq-scheduler
 segno==1.5.2
 swagger-spec-validator==3.0.3
 typing-extensions==4.4.0
