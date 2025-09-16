@@ -139,7 +139,8 @@ resource "aws_route53_record" "lb_cname" {
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
   ttl     = 60
-  records = [local.alb_hostname]
+  records = [local.ingress_hostname]
+
 
   depends_on = [data.kubernetes_ingress_v1.statuspage, time_sleep.wait_for_alb]
 }
