@@ -19,14 +19,14 @@ resource "helm_release" "statuspage" {
   create_namespace = true
   chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
 
-  wait             = true
-  timeout          = 300          # 5 minutes
-  wait_for_jobs    = true         # don't wait for migrate/collectstatic to finish
+  wait             = false
+  timeout          = 900          # 5 minutes
+  wait_for_jobs    = false         # don't wait for migrate/collectstatic to finish
   atomic           = false
 
   # ensure we actually roll the deployment even if Helm thinks nothing changed
-  force_update   = false
-  recreate_pods  = false
+  force_update   = true
+  recreate_pods  = true
   dependency_update = true
 
   # ---------------------------- image.* 
