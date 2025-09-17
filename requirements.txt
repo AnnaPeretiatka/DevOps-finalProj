@@ -25,5 +25,5 @@ segno==1.5.2
 swagger-spec-validator==3.0.3
 typing-extensions==4.4.0
 django-rq==2.5.1
-rq==2.5
-rq-scheduler==0.14.0
+rq==1.9.0
+rq-scheduler
