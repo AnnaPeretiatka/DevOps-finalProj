@@ -1,4 +1,4 @@
-# Get the DB instance (to find its managed master-user secret)
+# ---------------------------- Get DB secret dynamically ---------------------------------------# 
 data "aws_db_instance" "pg" {
   db_instance_identifier = module.db.db_instance_identifier
 }
@@ -13,6 +13,8 @@ locals {
   db_pass   = local.db_secret.password
 }
 
+# ---------------------------- Helm release for app ---------------------------------------# 
+
 resource "helm_release" "statuspage" {
   name             = "statuspage"
   namespace        = "statuspage"
@@ -20,14 +22,11 @@ resource "helm_release" "statuspage" {
   chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
 
   wait             = false
-  timeout          = 900          # 5 minutes
-  wait_for_jobs    = false         # don't wait for migrate/collectstatic to finish
+  timeout          = 900       
+  wait_for_jobs    = false         
   atomic           = false
-
-  # ensure we actually roll the deployment even if Helm thinks nothing changed
   force_update   = true
-  #recreate_pods  = true
-  #dependency_update = true
+
 
   # ---------------------------- image.* 
   set {
@@ -57,7 +56,7 @@ resource "helm_release" "statuspage" {
     value = "*"
   }
 
-  # ---------------------------- DB
+  # ---------------------------- DB (from Secrets Manager)
   set_sensitive {
     name  = "env.DATABASE_URL"
     value = format(

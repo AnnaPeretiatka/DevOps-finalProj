@@ -21,7 +21,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Check out your repository code into the runner
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -29,17 +29,16 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # Terraform output github_deploy_role_arn
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 3. Log in to ECR (Docker will be able to push to ecr registry)
+      # 3. Log in to ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       # 4. Build the Docker image and push to ECR
       - name: Build & push Docker image
         run: |
-          # Use the short git commit SHA as the image tag
           GIT_SHA=$(git rev-parse --short HEAD)
           IMAGE_URI="${{ env.ECR_REPO }}:${GIT_SHA}"
 
@@ -49,7 +48,6 @@ jobs:
           echo "Pushing image: ${IMAGE_URI}"
           docker push "${IMAGE_URI}"
 
-          # Export for later steps in this job
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
           echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
 
@@ -64,7 +62,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      # 7. Deploy/upgrade the app using the Helm chart
+      # 7. Deploy/upgrade the app using Helm chart
       - name: Helm upgrade/install
         run: |
           # Helm values are set from secrets & env.
@@ -75,7 +73,5 @@ jobs:
             --set image.repository="${{ env.ECR_REPO }}" \
             --set image.tag="${GIT_SHA}" \
             --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-            --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
             --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
             --set acmArn="${{ secrets.ACM_ARN }}"
