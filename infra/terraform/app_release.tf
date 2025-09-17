@@ -82,7 +82,7 @@ resource "helm_release" "statuspage" {
     value = format(
         "postgresql://%s:%s@%s:%s/%s?sslmode=require",
         local.db_secret.username,
-        local.db_pass,
+        urlencode(local.db_pass),
         module.db.db_instance_address,
         module.db.db_instance_port,
         module.db.db_instance_name
