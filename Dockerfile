@@ -1,5 +1,5 @@
 # Multi-process Django app (web/worker/scheduler) – single image
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -16,9 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --upgrade pip \
- && pip install --no-deps rq==1.15.1 \
- && pip install --no-deps django-rq==2.8.1 \
- && pip install --no-deps rq-scheduler==0.11.0 \
  && pip install -r requirements.txt \
  && pip install gunicorn
 
