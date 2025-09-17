@@ -51,10 +51,12 @@ resource "helm_release" "statuspage" {
     name = "env.STATUS_HOSTNAME"
     value = "status-page-ay.com"
   }
+
   set {
-    name = "env.ALLOWED_HOSTS" 
-    value = "*"
+    name  = "env.SITE_PROTOCOL"
+    value = "http"
   }
+  
 
   # ---------------------------- DB (from Secrets Manager)
 

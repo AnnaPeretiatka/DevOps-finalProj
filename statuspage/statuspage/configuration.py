@@ -14,14 +14,12 @@ import dj_database_url
 STATUS_HOSTNAME = os.environ.get("STATUS_HOSTNAME")
 if STATUS_HOSTNAME:
     ALLOWED_HOSTS = [STATUS_HOSTNAME]
-    # Use https in prod; ALB + ACM will terminate TLS and forward to app
-    SITE_URL = f"https://{STATUS_HOSTNAME}"
+    PROTOCOL = os.environ.get("SITE_PROTOCOL", "http")
+    SITE_URL = f"{PROTOCOL}://{STATUS_HOSTNAME}"
 else:
-    # Fall back to your original values (good for local/dev)
-    ALLOWED_HOSTS = ['*']
-    # Define the URL which will be used e.g. in E-Mails
+    ALLOWED_HOSTS = ["*"]
     SITE_URL = "http://status-page-ay.com"
-
+    
 # PostgreSQL database configuration. See the Django documentation for a complete list of available parameters:
 #   https://docs.djangoproject.com/en/stable/ref/settings/#databases
 

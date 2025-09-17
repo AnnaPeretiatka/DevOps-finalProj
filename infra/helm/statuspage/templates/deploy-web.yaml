@@ -39,9 +39,10 @@ spec:
               httpHeaders:
                 - name: Host
                   value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            failureThreshold: 6
+            initialDelaySeconds: 30  
+            periodSeconds: 10        
+            timeoutSeconds: 5
+            failureThreshold: 6  
           livenessProbe:
             httpGet:
               path: /
@@ -49,7 +50,7 @@ spec:
               httpHeaders:
                 - name: Host
                   value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
-            initialDelaySeconds: 10
-            periodSeconds: 20
+            initialDelaySeconds: 30
+            periodSeconds: 10
           resources: {{- toYaml .Values.resources.web | nindent 12 }}
 
