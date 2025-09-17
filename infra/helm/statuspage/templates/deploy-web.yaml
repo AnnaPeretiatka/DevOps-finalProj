@@ -30,8 +30,8 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
           envFrom:
-            - secretRef: { name: statuspage-secrets }
             - configMapRef: { name: statuspage-config }
+            - secretRef: { name: statuspage-secrets }
           readinessProbe:
             httpGet:
               path: / 

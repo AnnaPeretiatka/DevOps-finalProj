@@ -73,5 +73,7 @@ jobs:
             --set image.repository="${{ env.ECR_REPO }}" \
             --set image.tag="${GIT_SHA}" \
             --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
             --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
             --set acmArn="${{ secrets.ACM_ARN }}"

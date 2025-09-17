@@ -27,7 +27,9 @@ spec:
           #args: ["-A","statuspage","worker","-l","info","--pool=solo"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python","statuspage/manage.py","rqworker","high","default","low"]
-          envFrom: [{ secretRef: { name: statuspage-secrets }}, { configMapRef: { name: statuspage-config }}]
+          envFrom:
+            - configMapRef: { name: statuspage-config }
+            - secretRef: { name: statuspage-secrets }
           startupProbe:
             exec:
               command: ["/bin/sh","-c","getent hosts redis || nslookup redis || ping -c1 redis"]

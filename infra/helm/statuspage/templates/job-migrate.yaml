@@ -19,8 +19,6 @@ spec:
           image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
           command: ["python","statuspage/manage.py","migrate","--noinput"]
           envFrom:
-            - secretRef:
-                name: statuspage-secrets
-            - configMapRef:
-                name: statuspage-config
+            - configMapRef: { name: statuspage-config }
+            - secretRef: { name: statuspage-secrets }
 {{- end }}
