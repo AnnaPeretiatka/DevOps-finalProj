@@ -92,8 +92,11 @@ output "status_hostname" {
 
 # Make sure the Ingress exists (helm upgrade/install) BEFORE terraform apply.
 resource "time_sleep" "wait_for_alb" {
-  create_duration = "60s"
-  depends_on      = [helm_release.statuspage]
+  create_duration = "180s"
+  depends_on      = [
+    helm_release.statuspage,
+    helm_release.alb
+  ]
 }
 
 data "kubernetes_ingress_v1" "statuspage" {

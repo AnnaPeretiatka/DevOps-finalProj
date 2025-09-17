@@ -141,3 +141,30 @@ resource "helm_release" "alb" {
     aws_eks_node_group.default  
   ]
 }
+
+resource "helm_release" "ttl_after_finished" {
+  name       = "ttl-after-finished"
+  namespace  = "kube-system"
+  repository = "https://charts.deliveryhero.io/"
+  chart      = "k8s-ttl-controller"
+  version    = "0.5.0" # adjust if newer available
+
+  set {
+    name  = "rbac.create"
+    value = "true"
+  }
+}
+
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  version    = "3.11.0" # check latest
+  values = [<<EOT
+args:
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP
+EOT
+  ]
+}
