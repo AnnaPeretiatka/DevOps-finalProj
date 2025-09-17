@@ -38,7 +38,7 @@ spec:
               port: 8000
               httpHeaders:
                 - name: Host
-                  value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
+                  value: {{ .Values.env.STATUS_HOSTNAME | default "status-page-ay.com" | quote }}
             initialDelaySeconds: 30  
             periodSeconds: 10        
             timeoutSeconds: 5
@@ -49,7 +49,7 @@ spec:
               port: 8000
               httpHeaders:
                 - name: Host
-                  value: {{ default "localhost" .Values.env.STATUS_HOSTNAME | quote }}
+                  value: {{ .Values.env.STATUS_HOSTNAME | default "status-page-ay.com" | quote }}
             initialDelaySeconds: 30
             periodSeconds: 10
           resources: {{- toYaml .Values.resources.web | nindent 12 }}

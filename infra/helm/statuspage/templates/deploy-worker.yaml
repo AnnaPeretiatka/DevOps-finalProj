@@ -29,12 +29,40 @@ spec:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
           startupProbe:
-            tcpSocket:
-              port: 6379
-              host: statuspage-redis
-            #exec:
-              #command: ["/bin/sh","-c","getent hosts redis || nslookup redis || ping -c1 redis"]
-              #command: ["python","-c","import redis; r=redis.Redis(host='statuspage-redis', port=6379); r.ping()"]
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  python - <<'PY'
+                  import redis, os, sys
+                  try:
+                      r = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"))
+                      r.ping()
+                      print("ok")
+                  except Exception as e:
+                      print("fail", e)
+                      sys.exit(1)
+                  PY
             failureThreshold: 30
-            periodSeconds: 5
+            periodSeconds: 10
+
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  python - <<'PY'
+                  import redis, os, sys
+                  try:
+                      r = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"))
+                      r.ping()
+                      print("ok")
+                  except Exception as e:
+                      print("fail", e)
+                      sys.exit(1)
+                  PY
+            failureThreshold: 6
+            periodSeconds: 10
           resources: {{- toYaml .Values.resources.worker | nindent 12 }}
