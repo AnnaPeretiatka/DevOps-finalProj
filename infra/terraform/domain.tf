@@ -120,36 +120,35 @@ locals {
   alb_name        = local.alb_label != "" ? replace(local.alb_label, local.alb_suffix, "") : ""
 }
 
-# ---------------- Look up the ALB (zone_id is needed for A/ALIAS) -------------------#
+# ---------------- get ALB - dns_name + original hosted zone id -------------------#
 data "aws_lb" "ingress" {
-  for_each = local.ingress_hostname != "" ? { alb = local.ingress_hostname } : {}
-  # Name is the first label from the ALB hostname, e.g. "k8s-statuspa-statuspa-3cbb543552"
   name       = local.alb_name
-  depends_on = [data.kubernetes_ingress_v1.statuspage]
+  depends_on = [time_sleep.wait_for_alb]
 }
 
 # ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
 resource "aws_route53_record" "lb_cname" {
-  for_each = local.ingress_hostname != "" ? { cname = local.ingress_hostname } : {}
   zone_id = aws_route53_zone.this.zone_id
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
   ttl     = 60
-  records  = [each.value]
+  records = [local.ingress_hostname]
 
-  depends_on = [data.kubernetes_ingress_v1.statuspage]
+  depends_on = [
+    data.kubernetes_ingress_v1.statuspage,
+    time_sleep.wait_for_alb
+  ]
 }
 
 # ------------------ Root A/ALIAS -> ALB ------------------------------------------#
 resource "aws_route53_record" "root_alias" {
-  for_each = length(data.aws_lb.ingress) > 0 ? { alias = local.ingress_hostname } : {}
   zone_id = aws_route53_zone.this.zone_id
   name    = var.domain_name
   type    = "A"
 
   alias {
-    name                   = each.value
-    zone_id                = values(data.aws_lb.ingress)[0].zone_id
+    name                   = local.ingress_hostname
+    zone_id                = data.aws_lb.ingress.zone_id
     evaluate_target_health = false
   }
   depends_on = [aws_route53_record.lb_cname]
@@ -157,12 +156,11 @@ resource "aws_route53_record" "root_alias" {
 
 # ------------------- www CNAME -> apex -----------------------------------------#
 resource "aws_route53_record" "www_cname" {
-  for_each = local.ingress_hostname != "" ? { www = var.domain_name } : {}
   zone_id = aws_route53_zone.this.zone_id
   name    = "www"
   type    = "CNAME"
   ttl     = 300
-  records  = [each.value]
+  records  = [var.domain_name]
 
   depends_on = [aws_route53_record.root_alias]
 }
