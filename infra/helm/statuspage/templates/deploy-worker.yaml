@@ -33,4 +33,15 @@ spec:
               command: ["/bin/sh","-c","getent hosts redis || nslookup redis || ping -c1 redis"]
             failureThreshold: 30
             periodSeconds: 5
+          readinessProbe:
+            exec:
+              command: ["/bin/sh","-c","python - <<'PY'\nimport redis,os; r=redis.from_url(os.environ['REDIS_URL']); r.ping(); print('ok')\nPY"]
+            periodSeconds: 10
+            failureThreshold: 6
+
+          livenessProbe:
+            exec:
+              command: ["/bin/sh","-c","ps aux | grep -v grep | grep -q rqworker"]
+            initialDelaySeconds: 60
+            periodSeconds: 20
           resources: {{- toYaml .Values.resources.worker | nindent 12 }}
