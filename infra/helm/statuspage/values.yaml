@@ -75,3 +75,5 @@ collectstatic:
   enabled: true
 
 manageNamespace: false
+
+
