@@ -57,31 +57,12 @@ resource "helm_release" "statuspage" {
   }
 
   # ---------------------------- DB (from Secrets Manager)
-  /*
+
   set_sensitive {
     name  = "env.DATABASE_URL"
     value = format(
         "postgresql://%s:%s@%s:%s/%s?sslmode=require",
         var.db_username,
-        local.db_pass,
-        module.db.db_instance_address,
-        module.db.db_instance_port,
-        module.db.db_instance_name
-    )
-  }
-
-  set_sensitive {
-  name  = "env.DATABASE_URL"
-  value = "postgresql://statuspage:SDVi.oYdAf-AfG%5Dp4x5%245N%3FBnPs%21@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require"
-  }
-
-  */
-
-  set_sensitive {
-    name  = "env.DATABASE_URL"
-    value = format(
-        "postgresql://%s:%s@%s:%s/%s?sslmode=require",
-        local.db_secret.username,
         local.db_pass,
         module.db.db_instance_address,
         module.db.db_instance_port,
