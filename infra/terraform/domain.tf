@@ -1,10 +1,11 @@
+# -------------------------- Locals ------------------#
 locals {
   dc = var.domain_contact
 }
 
-# Register/purchase the domain
+# ---------- Register / Purchase the domain ----------#
+
 resource "aws_route53domains_domain" "this" {
-  #count       = var.register_domain ? 1 : 0
   provider    = aws.use1
   domain_name = var.domain_name
   auto_renew  = false
@@ -14,8 +15,6 @@ resource "aws_route53domains_domain" "this" {
   registrant_privacy = true
   tech_privacy       = true
   billing_privacy    = true
-
-  # same contact for all 4 roles
 
   admin_contact {
     first_name      = local.dc.first_name
@@ -75,7 +74,7 @@ resource "aws_route53domains_domain" "this" {
   tags = local.tags
 }
 
-# outputs
+# -------------------------- Outputs -------------------------#
 output "route53_zone_id" {
   value = aws_route53_zone.this.zone_id
 }
@@ -88,9 +87,9 @@ output "status_hostname" {
   value = var.domain_name
 }
 
-# ------------------------------------- DNS records -> Ingress/ALB -------------------------------------
+# ------------------------------------- Wait for ALB Controller + App Ingress -------------------------------------
 
-# Make sure the Ingress exists (helm upgrade/install) BEFORE terraform apply.
+# Ensure the controller & app chart are up before we query the Ingress status
 resource "time_sleep" "wait_for_alb" {
   create_duration = "180s"
   depends_on      = [
@@ -99,6 +98,7 @@ resource "time_sleep" "wait_for_alb" {
   ]
 }
 
+# Pull the Ingress (once created by Helm)
 data "kubernetes_ingress_v1" "statuspage" {
   metadata {
     name      = "statuspage"
@@ -113,64 +113,56 @@ locals {
     data.kubernetes_ingress_v1.statuspage.status[0].load_balancer[0].ingress[0].hostname,
     ""
   )
-  /*
-  alb_hostname = data.kubernetes_ingress_v1.statuspage.status[0].load_balancer[0].ingress[0].hostname
-  alb_label    = split(".", local.ingress_hostname)[0] : ""                                     # k8s-...-3cbb543552-303246783
-  alb_suffix_list = regexall("-[0-9]+$", local.alb_label) : []                              # ["-303246783"]
-  alb_suffix      = length(local.alb_suffix_list) > 0 ? local.alb_suffix_list[0] : ""
-  alb_name        = replace(local.alb_label, local.alb_suffix, "") : ""                     # k8s-statuspa-statuspa-3cbb543552
-  */
-
+  # Example hostname: k8s-statuspa-statuspa-3cbb543552-1616844995.us-east-1.elb.amazonaws.com
   alb_label       = local.ingress_hostname != "" ? split(".", local.ingress_hostname)[0] : ""
   alb_suffix_list = local.alb_label != "" ? regexall("-[0-9]+$", local.alb_label) : []
   alb_suffix      = length(local.alb_suffix_list) > 0 ? local.alb_suffix_list[0] : ""
   alb_name        = local.alb_label != "" ? replace(local.alb_label, local.alb_suffix, "") : ""
 }
 
-
-# get ALB - dns_name + original hosted zone id
+# ---------------- Look up the ALB (zone_id is needed for A/ALIAS) -------------------#
 data "aws_lb" "ingress" {
-  #count      = local.alb_name != "" ? 1 : 0
+  for_each = local.ingress_hostname != "" ? { alb = local.ingress_hostname } : {}
+  # Name is the first label from the ALB hostname, e.g. "k8s-statuspa-statuspa-3cbb543552"
   name       = local.alb_name
-  depends_on = [time_sleep.wait_for_alb]
+  depends_on = [data.kubernetes_ingress_v1.statuspage]
 }
 
-# lb.<domain> -> ALB DNS from Ingress status (CNAME)
+# ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
 resource "aws_route53_record" "lb_cname" {
-  #count   = local.ingress_hostname != "" ? 1 : 0
+  for_each = local.ingress_hostname != "" ? { cname = local.ingress_hostname } : {}
   zone_id = aws_route53_zone.this.zone_id
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
   ttl     = 60
-  records = [local.ingress_hostname]
+  records  = [each.value]
 
-
-  depends_on = [data.kubernetes_ingress_v1.statuspage, time_sleep.wait_for_alb]
+  depends_on = [data.kubernetes_ingress_v1.statuspage]
 }
 
-# A/ALIAS at root -> ALB
+# ------------------ Root A/ALIAS -> ALB ------------------------------------------#
 resource "aws_route53_record" "root_alias" {
-  count   = length(data.aws_lb.ingress) > 0 ? 1 : 0
+  for_each = length(data.aws_lb.ingress) > 0 ? { alias = local.ingress_hostname } : {}
   zone_id = aws_route53_zone.this.zone_id
   name    = var.domain_name
   type    = "A"
 
   alias {
-    name                   = local.ingress_hostname
-    zone_id                = data.aws_lb.ingress[0].zone_id
+    name                   = each.value
+    zone_id                = values(data.aws_lb.ingress)[0].zone_id
     evaluate_target_health = false
   }
   depends_on = [aws_route53_record.lb_cname]
 }
 
-# www -> apex
+# ------------------- www CNAME -> apex -----------------------------------------#
 resource "aws_route53_record" "www_cname" {
-  count   = local.ingress_hostname != "" ? 1 : 0
+  for_each = local.ingress_hostname != "" ? { www = var.domain_name } : {}
   zone_id = aws_route53_zone.this.zone_id
   name    = "www"
   type    = "CNAME"
   ttl     = 300
-  records = [var.domain_name]
+  records  = [each.value]
 
   depends_on = [aws_route53_record.root_alias]
 }
