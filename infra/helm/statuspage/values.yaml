@@ -1,6 +1,6 @@
 image: { 
   repository: "", 
-  tag: latest, 
+  tag: try, 
   pullPolicy: IfNotPresent 
 }
 replicaCounts: { 
