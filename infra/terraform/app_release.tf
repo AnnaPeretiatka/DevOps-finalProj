@@ -35,7 +35,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "image.tag"
-    value = "anna3"
+    value = "anna4"
   }
 
   # -------------------------- Core env
