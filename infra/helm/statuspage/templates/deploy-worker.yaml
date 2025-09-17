@@ -1,68 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: { 
-  name: statuspage-worker, 
+metadata:
+  name: statuspage-worker
   namespace: statuspage
-}
 spec:
   replicas: {{ .Values.replicaCounts.worker }}
-  selector: {
-    matchLabels: {
-      app: statuspage,
+  selector:
+    matchLabels:
+      app: statuspage
       tier: worker
-    }
-  }
   template:
-    metadata: {
-      labels: { 
-        app: statuspage,
+    metadata:
+      labels:
+        app: statuspage
         tier: worker
-      }
-    }
     spec:
       containers:
         - name: worker
-          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python","statuspage/manage.py","rqworker","high","default","low"]
+          command: ["python", "statuspage/manage.py", "rqworker", "high", "default", "low"]
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
-          startupProbe:
+          livenessProbe:
             exec:
               command:
-                - /bin/sh
-                - -c
-                - |
-                  python - <<'PY'
-                  import redis, os, sys
-                  try:
-                      r = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"))
-                      r.ping()
-                      print("ok")
-                  except Exception as e:
-                      print("fail", e)
-                      sys.exit(1)
-                  PY
-            failureThreshold: 30
-            periodSeconds: 10
-
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  python - <<'PY'
-                  import redis, os, sys
-                  try:
-                      r = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"))
-                      r.ping()
-                      print("ok")
-                  except Exception as e:
-                      print("fail", e)
-                      sys.exit(1)
-                  PY
-            failureThreshold: 6
-            periodSeconds: 10
+                - pgrep
+                - -f
+                - rqworker
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources: {{- toYaml .Values.resources.worker | nindent 12 }}
