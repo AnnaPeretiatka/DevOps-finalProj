@@ -11,7 +11,7 @@ WORKDIR /app
 
 # System deps for psycopg2 & build
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential libpq-dev curl ca-certificates git \
+      build-essential libpq-dev curl ca-certificates git procps \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/requirements.txt

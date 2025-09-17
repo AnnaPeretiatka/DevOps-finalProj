@@ -16,7 +16,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: collectstatic
-          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           command: ["python","statuspage/manage.py","collectstatic","--noinput"]
           envFrom:
             - configMapRef: { name: statuspage-config }
