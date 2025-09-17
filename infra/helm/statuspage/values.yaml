@@ -1,6 +1,6 @@
 image: { 
   repository: "", 
-  tag: anna2, 
+  tag: anna3, 
   pullPolicy: IfNotPresent 
 }
 replicaCounts: { 
