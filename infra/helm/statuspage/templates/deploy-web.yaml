@@ -25,7 +25,7 @@ spec:
         - name: web
           image: "{{ required "image.repository is required" .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["gunicorn","--workers","3","--bind","0.0.0.0:8000","statuspage.wsgi"]
+          command: ["gunicorn","--workers","3","--bind","0.0.0.0:8000","--timeout","60","statuspage.wsgi"]
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -41,7 +41,7 @@ spec:
                   value: {{ .Values.env.STATUS_HOSTNAME | default "status-page-ay.com" | quote }}
             initialDelaySeconds: 30  
             periodSeconds: 10        
-            timeoutSeconds: 5
+            timeoutSeconds: 10
             failureThreshold: 6  
           livenessProbe:
             httpGet:
@@ -52,5 +52,7 @@ spec:
                   value: {{ .Values.env.STATUS_HOSTNAME | default "status-page-ay.com" | quote }}
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources: {{- toYaml .Values.resources.web | nindent 12 }}
 
