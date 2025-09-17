@@ -27,3 +27,4 @@ typing-extensions==4.4.0
 django-rq==2.5.1
 rq==1.9.0
 rq-scheduler
+dj-database-url>=0.5.0

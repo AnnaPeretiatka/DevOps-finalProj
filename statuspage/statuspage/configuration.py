@@ -3,6 +3,7 @@
 #
 import os
 from urllib.parse import urlparse
+import dj_database_url
 
 
 
@@ -24,17 +25,23 @@ else:
 # PostgreSQL database configuration. See the Django documentation for a complete list of available parameters:
 #   https://docs.djangoproject.com/en/stable/ref/settings/#databases
 
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
-    u = urlparse(DATABASE_URL)
-    DATABASE = {
-        'NAME': (u.path.lstrip('/') or 'statuspage'),
-        'USER': u.username or 'statuspage',
-        'PASSWORD': u.password or '',
-        'HOST': u.hostname or 'localhost',
-        'PORT': str(u.port or 5432),
-        'CONN_MAX_AGE': 300,
-    }
+    #u = urlparse(DATABASE_URL)
+    #DATABASE = {
+    #    'NAME': (u.path.lstrip('/') or 'statuspage'),
+    #    'USER': u.username or 'statuspage',
+    #    'PASSWORD': u.password or '',
+    #    'HOST': u.hostname or 'localhost',
+    #    'PORT': str(u.port or 5432),
+    #    'CONN_MAX_AGE': 300,
+    #}
+    DATABASE = dj_database_url.parse(
+    DATABASE_URL,
+    conn_max_age=300,  # same as your old CONN_MAX_AGE
+    ssl_require=True   # enforces ?sslmode=require handling
+    )
 else:
     # Fallback for local/dev
     DATABASE = {
