@@ -28,19 +28,11 @@ else:
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
-    #u = urlparse(DATABASE_URL)
-    #DATABASE = {
-    #    'NAME': (u.path.lstrip('/') or 'statuspage'),
-    #    'USER': u.username or 'statuspage',
-    #    'PASSWORD': u.password or '',
-    #    'HOST': u.hostname or 'localhost',
-    #    'PORT': str(u.port or 5432),
-    #    'CONN_MAX_AGE': 300,
-    #}
+    # Use dj-database-url to safely parse full URL into Django settings
     DATABASE = dj_database_url.parse(
-    DATABASE_URL,
-    conn_max_age=300,  # same as your old CONN_MAX_AGE
-    ssl_require=True   # enforces ?sslmode=require handling
+        DATABASE_URL,
+        conn_max_age=300,  # same as your old CONN_MAX_AGE
+        ssl_require=True   # enforces ?sslmode=require handling
     )
 else:
     # Fallback for local/dev
