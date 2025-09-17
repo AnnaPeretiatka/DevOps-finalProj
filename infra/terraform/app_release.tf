@@ -35,7 +35,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "image.tag"
-    value = "latest5"
+    value = "latest6"
   }
 
   # -------------------------- Core env
@@ -76,10 +76,11 @@ resource "helm_release" "statuspage" {
   }
 
   */
+
   set_sensitive {
     name  = "env.DATABASE_URL"
     value = format(
-        "postgresql://%s:%s@%s:%s/%s?sslmode=require",
+        "postgresql://%s:%s@[%s]:%s/%s?sslmode=require",
         local.db_secret.username,
         local.db_pass,
         module.db.db_instance_address,
