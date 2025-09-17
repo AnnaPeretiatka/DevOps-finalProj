@@ -62,7 +62,7 @@ resource "helm_release" "statuspage" {
     name  = "env.DATABASE_URL"
     value = format(
         "postgresql://%s:%s@%s:%s/%s?sslmode=require",
-        urlencode(var.db_username),
+        urlencode(local.db_secret.username),
         urlencode(local.db_pass),
         module.db.db_instance_address,
         module.db.db_instance_port,
