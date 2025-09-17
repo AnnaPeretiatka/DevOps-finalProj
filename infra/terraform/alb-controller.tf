@@ -142,19 +142,6 @@ resource "helm_release" "alb" {
   ]
 }
 
-resource "helm_release" "ttl_after_finished" {
-  name       = "ttl-after-finished"
-  namespace  = "kube-system"
-  repository = "https://charts.deliveryhero.io/"
-  chart      = "k8s-ttl-controller"
-  version    = "0.5.0" # adjust if newer available
-
-  set {
-    name  = "rbac.create"
-    value = "true"
-  }
-}
-
 resource "helm_release" "metrics_server" {
   name       = "metrics-server"
   namespace  = "kube-system"
