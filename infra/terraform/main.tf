@@ -191,7 +191,7 @@ module "db" {
   manage_master_user_password   = true
   tags                          = local.tags
 
-  instance_lifecycle = {
+  lifecycle {
     ignore_changes = [
       db_subnet_group_name,
       parameter_group_name,
@@ -199,7 +199,6 @@ module "db" {
       manage_master_user_password,
     ]
   }
-
 }
 
 resource "aws_security_group" "db" {
