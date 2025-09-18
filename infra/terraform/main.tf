@@ -55,6 +55,15 @@ module "eks" {
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_subnets
 
+  cluster_lifecycle = {
+    ignore_changes = [
+      role_arn,
+      vpc_config,
+      kubernetes_network_config,
+      access_config,
+    ]
+  }
+
   enable_cluster_creator_admin_permissions = true
   
   endpoint_public_access  = true
@@ -154,6 +163,20 @@ resource "aws_eks_addon" "coredns" {
   tags              = local.tags
 }
 
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  version    = "3.11.0" # check latest
+  values = [<<EOT
+args:
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP
+EOT
+  ]
+}
+
 # --------------------------------------------- DB-RDS ---------------------------------------
 
 module "db" {
@@ -181,6 +204,16 @@ module "db" {
   apply_immediately             = false
   manage_master_user_password   = true
   tags                          = local.tags
+
+  cluster_lifecycle = {
+    ignore_changes = [
+      role_arn,
+      vpc_config,
+      kubernetes_network_config,
+      access_config,
+    ]
+  }
+
 }
 
 resource "aws_security_group" "db" {
