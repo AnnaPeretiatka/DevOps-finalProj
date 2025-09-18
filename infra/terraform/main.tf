@@ -163,20 +163,6 @@ resource "aws_eks_addon" "coredns" {
   tags              = local.tags
 }
 
-resource "helm_release" "metrics_server" {
-  name       = "metrics-server"
-  namespace  = "kube-system"
-  repository = "https://kubernetes-sigs.github.io/metrics-server/"
-  chart      = "metrics-server"
-  version    = "3.11.0" # check latest
-  values = [<<EOT
-args:
-  - --kubelet-insecure-tls
-  - --kubelet-preferred-address-types=InternalIP
-EOT
-  ]
-}
-
 # --------------------------------------------- DB-RDS ---------------------------------------
 
 module "db" {
