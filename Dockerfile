@@ -4,9 +4,6 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-
-#ENV POETRY_VIRTUALENVS_CREATE=false
-
 WORKDIR /app
 
 # System deps for psycopg2 & build
@@ -22,17 +19,17 @@ RUN python -m pip install --upgrade pip \
 # Copy app code
 COPY . /app
 
-# Create a non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-# outer statuspage folder
+# Set Django envs *before* running collectstatic
 ENV PYTHONPATH=/app/statuspage
 ENV DJANGO_SETTINGS_MODULE=statuspage.settings 
 ENV STATUS_PAGE_CONFIGURATION=statuspage.configuration
 
 # Collect static files
-RUN python statuspage/manage.py collectstatic --noinput || true
+RUN python statuspage/manage.py collectstatic --noinput
+
+# Create a non-root user
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 8000
 
