@@ -191,12 +191,12 @@ module "db" {
   manage_master_user_password   = true
   tags                          = local.tags
 
-  cluster_lifecycle = {
+  instance_lifecycle = {
     ignore_changes = [
-      role_arn,
-      vpc_config,
-      kubernetes_network_config,
-      access_config,
+      db_subnet_group_name,
+      parameter_group_name,
+      vpc_security_group_ids,
+      manage_master_user_password,
     ]
   }
 
