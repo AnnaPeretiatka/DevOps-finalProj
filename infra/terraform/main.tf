@@ -226,6 +226,43 @@ resource "aws_route53_zone" "this" {
   tags = local.tags
 }
 
+# --------------------------------------------- S3 ----------------------------------------------
+
+resource "aws_s3_bucket" "static" {
+  bucket = "${var.project_name}-S3"
+}
+
+# Allow public reads for objects (quick start; later consider CloudFront)
+resource "aws_s3_bucket_public_access_block" "pab" {
+  bucket                  = aws_s3_bucket.static.id
+  block_public_acls       = false
+  ignore_public_acls      = false
+  block_public_policy     = false
+  restrict_public_buckets = false
+}
+
+data "aws_iam_policy_document" "public_read" {
+  statement {
+    sid     = "PublicReadGetObject"
+    effect  = "Allow"
+    actions = ["s3:GetObject"]
+    principals { type = "*" identifiers = ["*"] }
+    resources = ["${aws_s3_bucket.static.arn}/*"]
+  }
+}
+
+resource "aws_s3_bucket_policy" "policy" {
+  bucket = aws_s3_bucket.static.id
+  policy = data.aws_iam_policy_document.public_read.json
+}
+
+output "bucket" {
+  value = aws_s3_bucket.static.bucket
+}
+output "bucket_domain" {
+  value = "s3.${var.region != null ? var.region : "us-east-1"}.amazonaws.com"
+}
+
 # ---------------------------- ACM_certificate - not prmissions error -------------------------------
 
 /*

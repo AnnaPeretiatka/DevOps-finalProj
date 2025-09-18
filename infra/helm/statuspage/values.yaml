@@ -80,6 +80,3 @@ persistence:
   enabled: false
   storageClass: efs-sc
   size: 1Gi
-
-
-

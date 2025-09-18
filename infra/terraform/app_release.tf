@@ -1,8 +1,9 @@
 # ---------------------------- Get DB secret dynamically ---------------------------------------# 
+/*
 data "aws_db_instance" "pg" {
   db_instance_identifier = module.db.db_instance_identifier
 }
-
+*/
 # Read the current password from Secrets Manager (JSON)
 data "aws_secretsmanager_secret_version" "pg_master" {
   secret_id = data.aws_db_instance.pg.master_user_secret[0].secret_arn
