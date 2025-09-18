@@ -7,6 +7,7 @@ provider "aws" {
   alias  = "use1"
   region = "us-east-1"
 }
+/*
 
 # Read EKS cluster endpoint/CA and a short-lived auth token
 data "aws_eks_cluster" "this" {
@@ -30,3 +31,4 @@ provider "helm" {
     token                  = data.aws_eks_cluster_auth.this.token
   }
 }
+*/
