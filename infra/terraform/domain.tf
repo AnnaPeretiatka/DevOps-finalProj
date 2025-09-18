@@ -88,16 +88,18 @@ output "status_hostname" {
 }
 
 # ------------------------------------- Wait for ALB Controller + App Ingress -------------------------------------
-/*
+
 # Ensure the controller & app chart are up before we query the Ingress status
 resource "time_sleep" "wait_for_alb" {
   create_duration = "180s"
+  /*
   depends_on      = [
     helm_release.statuspage,
     helm_release.alb
   ]
+  */
 }
-*/
+
 # Pull the Ingress (once created by Helm)
 data "kubernetes_ingress_v1" "statuspage" {
   metadata {
