@@ -55,15 +55,6 @@ module "eks" {
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = module.vpc.private_subnets
 
-  cluster_lifecycle = {
-    ignore_changes = [
-      role_arn,
-      vpc_config,
-      kubernetes_network_config,
-      access_config,
-    ]
-  }
-
   enable_cluster_creator_admin_permissions = true
   
   endpoint_public_access  = true
