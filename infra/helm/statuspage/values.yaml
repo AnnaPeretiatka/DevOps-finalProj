@@ -69,10 +69,10 @@ pdb:
   webMinAvailable: 1
 
 migrations:
-  enabled: true
+  enabled: false
 
 collectstatic:
-  enabled: true
+  enabled: false
 
 manageNamespace: false
 
