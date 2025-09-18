@@ -1,12 +1,11 @@
-image: { 
-  repository: "", 
-  tag: latest2, 
+image:
+  repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo
+  tag: latest2
   pullPolicy: IfNotPresent 
-}
-replicaCounts: { 
-  web: 2,
+
+replicaCounts:
+  web: 2
   worker: 1
-}
 
 resources:
   web:
