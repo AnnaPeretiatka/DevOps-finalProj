@@ -77,4 +77,9 @@ collectstatic:
 
 manageNamespace: false
 
+persistence:
+  enabled: true
+  storageClass: gp3-csi
+  size: 1Gi
+
 
