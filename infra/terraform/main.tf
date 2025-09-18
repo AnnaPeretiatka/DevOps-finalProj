@@ -190,15 +190,6 @@ module "db" {
   apply_immediately             = false
   manage_master_user_password   = true
   tags                          = local.tags
-
-  lifecycle {
-    ignore_changes = [
-      db_subnet_group_name,
-      parameter_group_name,
-      vpc_security_group_ids,
-      manage_master_user_password,
-    ]
-  }
 }
 
 resource "aws_security_group" "db" {
