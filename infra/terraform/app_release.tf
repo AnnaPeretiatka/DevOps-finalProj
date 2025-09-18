@@ -57,7 +57,6 @@ resource "helm_release" "statuspage" {
     value = "http"
   }
   
-
   # ---------------------------- DB (from Secrets Manager)
 
   set_sensitive {

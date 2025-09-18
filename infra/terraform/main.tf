@@ -74,7 +74,7 @@ module "eks" {
   tags = local.tags
 }
 
-# ------------------------------------------------ EKS Add-ons (2/3) -----------------------------------------
+# ------------------------------------------------ EKS Add-ons (2/4) -----------------------------------------
 
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name             = module.eks.cluster_name
@@ -87,6 +87,44 @@ resource "aws_eks_addon" "kube_proxy" {
   addon_name        = "kube-proxy"
   tags              = local.tags
 }
+
+---efs---
+
+resource "aws_efs_file_system" "this" {
+  creation_token = "${var.project_name}-efs"
+  tags           = local.tags
+}
+
+resource "aws_efs_mount_target" "a" {
+  file_system_id  = aws_efs_file_system.this.id
+  subnet_id       = module.vpc.private_subnets[0]
+  security_groups = [aws_security_group.efs.id]
+}
+
+resource "aws_efs_mount_target" "b" {
+  file_system_id  = aws_efs_file_system.this.id
+  subnet_id       = module.vpc.private_subnets[1]
+  security_groups = [aws_security_group.efs.id]
+}
+
+resource "aws_security_group" "efs" {
+  vpc_id = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 
 # --------------------------------------------- Node Group IAM Role ---------------------------------------
 
@@ -159,11 +197,6 @@ resource "aws_eks_addon" "coredns" {
   tags              = local.tags
 }
 
-resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = module.eks.cluster_name
-  addon_name               = "aws-ebs-csi-driver"
-  tags                     = local.tags
-}
 
 # --------------------------------------------- DB-RDS ---------------------------------------
 
@@ -507,6 +540,10 @@ output "db_name" {
 
 output "eks_cluster_sg_id" {
   value = module.eks.cluster_security_group_id
+}
+
+output "efs_id" {
+  value = aws_efs_file_system.this.id
 }
 
 /*
