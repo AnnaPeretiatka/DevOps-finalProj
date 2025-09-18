@@ -1,25 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: {
-  name: statuspage-web,
+metadata:
+  name: statuspage-web
   namespace: statuspage
-}
 spec:
   replicas: {{ .Values.replicaCounts.web }}
-  strategy: { type: RollingUpdate, rollingUpdate: { maxUnavailable: 0, maxSurge: 1 } }
-  selector: {
-    matchLabels: {
-      app: statuspage, 
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: statuspage
       tier: web
-    }
-  }
   template:
-    metadata: {
-      labels: {
-        app: statuspage,
+    metadata:
+      labels:
+        app: statuspage
         tier: web
-      }
-    }
     spec:
       containers:
         - name: web
@@ -27,22 +26,22 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["gunicorn","--workers","3","--bind","0.0.0.0:8000","--timeout","60","statuspage.wsgi"]
           ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
+            - name: gunicorn
+              containerPort: 8000
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
           readinessProbe:
             httpGet:
-              path: / 
+              path: /
               port: 8000
               httpHeaders:
                 - name: Host
                   value: {{ .Values.env.STATUS_HOSTNAME | default "status-page-ay.com" | quote }}
-            initialDelaySeconds: 30  
-            periodSeconds: 10        
+            initialDelaySeconds: 30
+            periodSeconds: 10
             timeoutSeconds: 10
-            failureThreshold: 6  
+            failureThreshold: 6
           livenessProbe:
             httpGet:
               path: /
@@ -55,4 +54,25 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
           resources: {{- toYaml .Values.resources.web | nindent 12 }}
+          volumeMounts:
+            - name: static-files
+              mountPath: /app/statuspage/static
 
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: static-files
+              mountPath: /usr/share/nginx/html/static
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+
+      volumes:
+        - name: static-files
+          emptyDir: {}
+        - name: nginx-config
+          configMap:
+            name: statuspage-nginx-conf
