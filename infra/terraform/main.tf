@@ -162,7 +162,6 @@ resource "aws_eks_addon" "coredns" {
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name             = module.eks.cluster_name
   addon_name               = "aws-ebs-csi-driver"
-  resolve_conflicts        = "OVERWRITE"   # ensures updates don't block
   tags                     = local.tags
 }
 
