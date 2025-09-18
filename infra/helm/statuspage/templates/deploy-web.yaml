@@ -20,16 +20,6 @@ spec:
         app: statuspage
         tier: web
     spec:
-      volumes:
-        - name: static-files
-          persistentVolumeClaim:
-            claimName: statuspage-static
-        - name: nginx-conf
-          configMap:
-            name: statuspage-nginx-conf
-            items:
-              - key: default.conf
-                path: default.conf
       containers:
         - name: web
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -38,9 +28,6 @@ spec:
           ports:
             - name: gunicorn
               containerPort: 8000
-          volumeMounts:
-          - name: static-files
-            mountPath: /app/statuspage/static
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
@@ -67,18 +54,5 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
           resources: {{- toYaml .Values.resources.web | nindent 12 }}
-
-        - name: nginx
-          image: nginx:1.25
-          ports:
-            - name: http
-              containerPort: 80
-          volumeMounts:
-            - name: static-files
-              mountPath: /app/statuspage/static
-            - name: nginx-conf
-              mountPath: /etc/nginx/conf.d/default.conf
-              subPath: default.conf
-
 
       

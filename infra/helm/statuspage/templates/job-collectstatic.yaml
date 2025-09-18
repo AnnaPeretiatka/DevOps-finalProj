@@ -21,11 +21,4 @@ spec:
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
-          volumeMounts:
-            - name: static-files
-              mountPath: /app/statuspage/static
-      volumes:
-        - name: static-files
-          persistentVolumeClaim:
-            claimName: statuspage-static
 {{- end }}

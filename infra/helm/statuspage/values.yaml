@@ -72,12 +72,12 @@ migrations:
   enabled: false
 
 collectstatic:
-  enabled: false
+  enabled: true
 
 manageNamespace: false
 
 persistence:
-  enabled: true
+  enabled: false
   storageClass: efs-sc
   size: 1Gi
 
