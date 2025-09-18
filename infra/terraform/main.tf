@@ -119,6 +119,11 @@ resource "aws_iam_role_policy_attachment" "node_AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
+resource "aws_iam_role_policy_attachment" "node_AmazonEBSCSIDriverPolicy" {
+  role       = aws_iam_role.node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
 # --------------------------------------------- Node Group ---------------------------------------
 
 resource "aws_eks_node_group" "default" {
@@ -145,13 +150,20 @@ resource "aws_eks_node_group" "default" {
   tags = local.tags
 }
 
-# ------------------------------------------------ EKS Add-ons (3/3) -----------------------------------------
+# ------------------------------------------------ EKS Add-ons (4/4) -----------------------------------------
 
 resource "aws_eks_addon" "coredns" {
   cluster_name      = module.eks.cluster_name
   addon_name        = "coredns"
   depends_on   = [aws_eks_node_group.default]
   tags              = local.tags
+}
+
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name             = module.eks.cluster_name
+  addon_name               = "aws-ebs-csi-driver"
+  resolve_conflicts        = "OVERWRITE"   # ensures updates don't block
+  tags                     = local.tags
 }
 
 # --------------------------------------------- DB-RDS ---------------------------------------
