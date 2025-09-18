@@ -22,17 +22,8 @@ spec:
     spec:
       volumes:
         - name: static-files
-          emptyDir: {}
-      initContainers:
-        - name: collectstatic
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["python", "statuspage/manage.py", "collectstatic", "--noinput"]
-          volumeMounts:
-            - name: static-files
-              mountPath: /app/statuspage/static
-        - name: migrate
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["python", "statuspage/manage.py", "migrate", "--noinput"]
+          persistentVolumeClaim:
+            claimName: statuspage-static
       containers:
         - name: web
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
