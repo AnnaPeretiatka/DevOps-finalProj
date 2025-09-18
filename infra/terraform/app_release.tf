@@ -21,7 +21,7 @@ resource "helm_release" "statuspage" {
   create_namespace = true
   chart            = "${path.module}/../helm/statuspage"   # path from infra/terraform -> infra/helm/statuspage
 
-  wait             = true
+  wait             = false
   timeout          = 900       
   wait_for_jobs    = false         
   atomic           = false
