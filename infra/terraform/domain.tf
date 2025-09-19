@@ -96,7 +96,7 @@ variable "alb_name_fixed" {
 
 
 # ------------------------------------- IngressClass -------------------------------------
-
+/*
 resource "kubernetes_ingress_class" "alb" {
   count = var.enable_alb ? 1 : 0
   metadata {
@@ -109,7 +109,7 @@ resource "kubernetes_ingress_class" "alb" {
     helm_release.alb
   ]
 }
-
+*/
 
 # ------------------------------------- Wait Ingress hostname -------------------------------------
 
