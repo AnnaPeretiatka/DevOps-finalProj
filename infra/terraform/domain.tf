@@ -179,7 +179,7 @@ locals {
 # ---------------- get ALB - dns_name + original hosted zone id -------------------#
 data "aws_lb" "ingress" {
   count     = var.enable_app ? 1 : 0
-  name       = var.alb_name_fixed
+  name       = local.alb_name
   #depends_on = [time_sleep.wait_for_alb]
   depends_on = [null_resource.wait_for_ingress_hostname]
 }
