@@ -119,19 +119,19 @@ resource "null_resource" "wait_for_ingress_hostname" {
 
   provisioner "local-exec" {
     command = <<'EOT'
-set -e
-for i in $(seq 1 60); do
-  host=$(kubectl -n statuspage get ingress statuspage -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-  if [ -n "$host" ]; then
-    echo "Ingress hostname ready: $host"
-    exit 0
-  fi
-  echo "Waiting for ingress hostname (attempt $i/60)..."
-  sleep 10
-done
-echo "Timeout waiting for ingress hostname"
-exit 1
-EOT
+      set -e
+      for i in $(seq 1 60); do
+        host=$(kubectl -n statuspage get ingress statuspage -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+        if [ -n "$host" ]; then
+          echo "Ingress hostname ready: $host"
+          exit 0
+        fi
+        echo "Waiting for ingress hostname (attempt $i/60)..."
+        sleep 10
+      done
+      echo "Timeout waiting for ingress hostname"
+      exit 1
+      EOT
   }
 
   depends_on = [helm_release.statuspage]  # keep this
