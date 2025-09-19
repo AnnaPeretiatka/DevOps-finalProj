@@ -32,13 +32,20 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 3. Log in to ECR
+      # 3. Install kubectl
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.30.0'
+
+      # 4. Log in to ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4. Build the Docker image and push to ECR
+      # 5. Build the Docker image and push to ECR
       - name: Build & push Docker image
         run: |
+          set -euo pipefail
           GIT_SHA=$(git rev-parse --short HEAD)
           IMAGE_URI="${{ env.ECR_REPO }}:${GIT_SHA}"
 
@@ -51,34 +58,35 @@ jobs:
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
           echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
       
-      # 5. Install Helm CLI early
+      # 6. Install Helm
       - name: Setup Helm
         uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.4'
 
-
-      # 5. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
+      # 7. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
       - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER}"
+
+      # 8. Sanity check connectivity
+      - name: Sanity check connectivity
         run: |
-          aws eks update-kubeconfig \
-            --region "${AWS_REGION}" \
-            --name "${EKS_CLUSTER}"
+          kubectl version --short
+          kubectl get ns
+          kubectl get nodes -o wide
 
-      # 6. Install Helm CLI
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-
-      # 7. Deploy/upgrade the app using Helm chart
+      # 9. Deploy/upgrade the app using Helm chart
       - name: Helm upgrade/install
         run: |
-          # Helm values are set from secrets & env - we pass the repository and tag so web/worker/scheduler use the same image version.
+          set -euo pipefail
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
             --create-namespace \
             --set image.repository="${{ env.ECR_REPO }}" \
             --set image.tag="${GIT_SHA}" \
+            --set image.pullPolicy=Always  \
             --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
             --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
-            --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
-            --set image.pullPolicy=Always  \
+            --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}"
             # --set acmArn="${{ secrets.ACM_ARN }}"

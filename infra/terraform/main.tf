@@ -249,6 +249,14 @@ resource "aws_s3_bucket_versioning" "static" {
   versioning_configuration { status = "Enabled" }
 }
 
+resource "aws_s3_bucket_public_access_block" "static" {
+  bucket                  = aws_s3_bucket.static.id
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
 resource "aws_s3_bucket_policy" "static_public_read" {
   bucket = aws_s3_bucket.static.id
   policy = jsonencode({
@@ -258,18 +266,13 @@ resource "aws_s3_bucket_policy" "static_public_read" {
       Effect    = "Allow",
       Principal = "*",
       Action    = ["s3:GetObject"],
-      Resource  = "arn:aws:s3:::${aws_s3_bucket.static.bucket}/*"
+      #Resource  = "arn:aws:s3:::${aws_s3_bucket.static.bucket}/*"
+      Resource: "${aws_s3_bucket.static.arn}/static/*"                # limit to /static/*
     }]
   })
+  depends_on = [aws_s3_bucket_public_access_block.static]
 }
 
-resource "aws_s3_bucket_public_access_block" "static" {
-  bucket                  = aws_s3_bucket.static.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
 
 # allow browser GETs via your ALB hostname/CORS (safe defaults)
 resource "aws_s3_bucket_cors_configuration" "static" {
@@ -432,6 +435,23 @@ resource "aws_iam_policy" "deploy_policy" {
 resource "aws_iam_role_policy_attachment" "github_deploy_attach" {
   role       = aws_iam_role.github_deploy.name
   policy_arn = aws_iam_policy.deploy_policy.arn
+}
+
+# Map the GitHub OIDC role into the EKS cluster RBAC
+resource "aws_eks_access_entry" "github_deploy" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = aws_iam_role.github_deploy.arn
+  # username   = "github-deploy"   # optional
+}
+
+# Grant cluster-admin-equivalent rights
+resource "aws_eks_access_policy_association" "github_deploy_admin" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = aws_iam_role.github_deploy.arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  access_scope {
+    type = "cluster"
+  }
 }
 
 # --------------------------------------------- secret key ----------------------------------------------

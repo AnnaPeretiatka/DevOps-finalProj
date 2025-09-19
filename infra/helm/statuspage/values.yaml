@@ -77,10 +77,10 @@ collectstatic:
 manageNamespace: false
 
 s3:
-  bucket: ""   # will fill in from Terraform output later
+  bucket: ""   
   region: us-east-1
   customDomain: ""
 serviceAccount:
   create: true
   name: statuspage-web
-  annotations: {}  # Terraform will inject IRSA annotation
+  annotations: {} 
