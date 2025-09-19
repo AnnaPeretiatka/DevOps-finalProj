@@ -40,6 +40,11 @@ resource "helm_release" "statuspage" {
     name  = "image.tag"
     value = "latest"
   }
+  set {
+    name  = "image.pullPolicy"  
+    value = "Always"          
+  }
+  
 
   # -------------------------- Core env
   set {
@@ -126,7 +131,7 @@ resource "helm_release" "statuspage" {
     name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/scheme"
     value = "internet-facing"
   }
-  
+
   set {
     name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/target-type"
     value = "ip"
@@ -140,6 +145,19 @@ resource "helm_release" "statuspage" {
   set {
     name  = "s3.region"
     value = var.aws_region
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+  set {
+    name  = "serviceAccount.name"
+    value = "statuspage-web"
+  }
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.web_sa.arn
   }
 
 

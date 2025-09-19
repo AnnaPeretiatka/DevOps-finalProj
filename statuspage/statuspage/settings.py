@@ -376,6 +376,42 @@ RQ_QUEUES = {
     'low': RQ_PARAMS,
 }
 
+try:  # ★
+    from . import configuration as cfg  
+except Exception:  
+    cfg = None  
+
+if cfg:  
+    # Append any extra apps (e.g., 'storages')  
+    if "EXTRA_APPS" in dir(cfg):  
+        INSTALLED_APPS += list(cfg.EXTRA_APPS)  
+
+    # Adopt optional overrides if provided  
+    if hasattr(cfg, "ALLOWED_HOSTS"): ALLOWED_HOSTS = cfg.ALLOWED_HOSTS  
+    if hasattr(cfg, "SITE_URL"): SITE_URL = cfg.SITE_URL  
+    if hasattr(cfg, "SECRET_KEY"): SECRET_KEY = cfg.SECRET_KEY  
+    if hasattr(cfg, "DEBUG"): DEBUG = cfg.DEBUG  
+
+    # Storage/static 
+    if hasattr(cfg, "STATIC_URL"): STATIC_URL = cfg.STATIC_URL  
+    elif hasattr(cfg, "STATIC_URL_FALLBACK"): STATIC_URL = cfg.STATIC_URL_FALLBACK 
+    if hasattr(cfg, "STORAGES"): STORAGES = cfg.STORAGES  
+    if hasattr(cfg, "AWS_STORAGE_BUCKET_NAME"): AWS_STORAGE_BUCKET_NAME = cfg.AWS_STORAGE_BUCKET_NAME  
+    if hasattr(cfg, "AWS_S3_REGION_NAME"): AWS_S3_REGION_NAME = cfg.AWS_S3_REGION_NAME  
+    if hasattr(cfg, "AWS_QUERYSTRING_AUTH"): AWS_QUERYSTRING_AUTH = cfg.AWS_QUERYSTRING_AUTH  
+    if hasattr(cfg, "AWS_S3_FILE_OVERWRITE"): AWS_S3_FILE_OVERWRITE = cfg.AWS_S3_FILE_OVERWRITE 
+    if hasattr(cfg, "AWS_DEFAULT_ACL"): AWS_DEFAULT_ACL = cfg.AWS_DEFAULT_ACL 
+    if hasattr(cfg, "AWS_S3_CUSTOM_DOMAIN"): AWS_S3_CUSTOM_DOMAIN = cfg.AWS_S3_CUSTOM_DOMAIN  
+
+    # Database (cfg.DATABASE is a single dict suitable for DATABASES['default'])
+    if hasattr(cfg, "DATABASE"): 
+        DATABASES = {"default": cfg.DATABASE}
+
+    # Redis (if your code consumes this dictionary) 
+    if hasattr(cfg, "REDIS"): REDIS = cfg.REDIS  
+
+
+
 for plugin_name in PLUGINS:
 
     # Import plugin module

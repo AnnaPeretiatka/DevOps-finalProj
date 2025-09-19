@@ -4,12 +4,14 @@
 import os
 from urllib.parse import urlparse
 import dj_database_url
-from django.conf import settings
+#from django.conf import settings
+
+EXTRA_APPS = [] 
 
 USE_S3 = True
 
 if USE_S3:
-    INSTALLED_APPS = list(settings.INSTALLED_APPS) + ["storages"]
+    EXTRA_APPS.append("storages")
     AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
     AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "us-east-1")
     AWS_QUERYSTRING_AUTH = False  # optional: cleaner URLs
@@ -32,7 +34,6 @@ if USE_S3:
       },
     }
 else:
-    # your old local static setup
     STATIC_URL = "/static/"
 
 # This is a list of valid fully-qualified domain names (FQDNs) for the Status-Page server. Status-Page will not permit
@@ -63,6 +64,7 @@ if DATABASE_URL:
 else:
     # Fallback for local/dev
     DATABASE = {
+        "ENGINE": "django.db.backends.postgresql",
         'NAME': 'statuspage',
         'USER': 'statuspage',
         'PASSWORD': 'status',
@@ -221,10 +223,5 @@ SHORT_TIME_FORMAT = 'H:i:s'
 DATETIME_FORMAT = 'N j, Y g:i a'
 SHORT_DATETIME_FORMAT = 'Y-m-d H:i'
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(os.path.dirname(__file__), "static")
-
-# Media files (uploads)
+STATIC_URL_FALLBACK = "/static/"
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(os.path.dirname(__file__), "media")

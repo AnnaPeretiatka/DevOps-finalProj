@@ -80,4 +80,5 @@ jobs:
             --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
             --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
+            --set image.pullPolicy=Always  \
             # --set acmArn="${{ secrets.ACM_ARN }}"
