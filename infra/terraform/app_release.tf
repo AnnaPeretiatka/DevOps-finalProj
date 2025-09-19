@@ -1,16 +1,19 @@
 # ---------------------------- Get DB secret dynamically ---------------------------------------# 
 data "aws_db_instance" "pg" {
   db_instance_identifier = module.db.db_instance_identifier
+  depends_on = [module.db]
 }
 
 # Read the current password from Secrets Manager (JSON)
 data "aws_secretsmanager_secret_version" "pg_master" {
   secret_id = data.aws_db_instance.pg.master_user_secret[0].secret_arn
+  depends_on = [module.db]
 }
 
 locals {
   db_secret = jsondecode(data.aws_secretsmanager_secret_version.pg_master.secret_string)
   db_pass   = local.db_secret.password
+  depends_on = [module.db]
 }
 
 # ---------------------------- Helm release for app ---------------------------------------# 

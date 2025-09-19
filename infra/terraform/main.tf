@@ -269,7 +269,7 @@ resource "aws_s3_bucket_cors_configuration" "static" {
 }
 
 # --------------------------------------------- S3 role ---------------------------------------------
-/*
+
 data "aws_iam_policy_document" "web_sa_trust" {
   statement {
     effect  = "Allow"
@@ -308,13 +308,15 @@ data "aws_iam_policy_document" "web_s3" {
 resource "aws_iam_policy" "web_s3" {
   name   = "${var.project_name}-web-s3"
   policy = data.aws_iam_policy_document.web_s3.json
+  depends_on = [aws_s3_bucket.static]
 }
 
 resource "aws_iam_role_policy_attachment" "web_sa_attach" {
   role       = aws_iam_role.web_sa.name
   policy_arn = aws_iam_policy.web_s3.arn
+  depends_on = [aws_iam_policy.web_s3]
 }
-*/
+
 
 # ---------------------------- ACM_certificate - not prmissions error -------------------------------
 
