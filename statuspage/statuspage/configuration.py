@@ -4,12 +4,12 @@
 import os
 from urllib.parse import urlparse
 import dj_database_url
-
+from statuspage.settings import INSTALLED_APPS as BASE_APPS
 
 USE_S3 = True
 
 if USE_S3:
-    INSTALLED_APPS += ["storages"]
+    INSTALLED_APPS = BASE_APPS + ["storages"]
     AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
     AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "us-east-1")
     AWS_QUERYSTRING_AUTH = False  # optional: cleaner URLs

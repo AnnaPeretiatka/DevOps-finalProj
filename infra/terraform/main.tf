@@ -467,6 +467,10 @@ output "public_subnets" {
   value = module.vpc.public_subnets
 }
 
+output "update_kubeconfig_cmd" {
+  value = "aws eks update-kubeconfig --region us-east-1 --name ${module.eks.cluster_name}"
+}
+
 # ------------------- ECR -------------------
 
 output "ecr_repo_url" {
