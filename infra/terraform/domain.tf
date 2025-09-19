@@ -90,6 +90,7 @@ output "status_hostname" {
 # ------------------------------------- Wait for ALB Controller + App Ingress -------------------------------------
 
 # Ensure the controller & app chart are up before we query the Ingress status
+/*
 resource "time_sleep" "wait_for_alb" {
   count          = var.enable_app ? 1 : 0
   create_duration = "300s"
@@ -97,6 +98,30 @@ resource "time_sleep" "wait_for_alb" {
     helm_release.statuspage,
     helm_release.alb
   ] 
+}
+*/
+# Wait until the Ingress has a hostname (created by the ALB controller)
+resource "null_resource" "wait_for_ingress_hostname" {
+  count = var.enable_app ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<EOT
+    set -e
+    for i in {1..45}; do
+      host=$(kubectl -n statuspage get ingress statuspage -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+      if [ -n "$host" ]; then
+        echo "Ingress hostname ready: $host"
+        exit 0
+      fi
+      echo "Waiting for ingress hostname (attempt $i/45)..."
+      sleep 10
+    done
+    echo "Timeout waiting for ingress hostname"
+    exit 1
+    EOT
+  }
+
+  depends_on = [helm_release.statuspage]
 }
 
 # Pull the Ingress (once created by Helm)
@@ -106,7 +131,8 @@ data "kubernetes_ingress_v1" "statuspage" {
     name      = "statuspage"
     namespace = "statuspage"
   }
-  depends_on = [time_sleep.wait_for_alb]
+  #depends_on = [time_sleep.wait_for_alb]
+  depends_on = [null_resource.wait_for_ingress_hostname]
 }
 
 # ---------------- Parse ALB name from the Ingress hostname (k8s-... from k8s-....elb.amazonaws.com)
@@ -125,7 +151,8 @@ locals {
 data "aws_lb" "ingress" {
   count     = var.enable_app ? 1 : 0
   name       = local.alb_name
-  depends_on = [time_sleep.wait_for_alb]
+  #depends_on = [time_sleep.wait_for_alb]
+  depends_on = [null_resource.wait_for_ingress_hostname]
 }
 
 # ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
@@ -137,9 +164,9 @@ resource "aws_route53_record" "lb_cname" {
   ttl     = 60
   records = [local.ingress_hostname]
 
-  depends_on = [
-    time_sleep.wait_for_alb
-  ]
+  #depends_on = [time_sleep.wait_for_alb]
+  depends_on = [null_resource.wait_for_ingress_hostname]
+
 }
 
 # ------------------ Root A/ALIAS -> ALB ------------------------------------------#
@@ -151,7 +178,7 @@ resource "aws_route53_record" "root_alias" {
 
   alias {
     name                   = local.ingress_hostname
-    zone_id                = try(data.aws_lb.ingress[0].zone_id, "")
+    zone_id                = data.aws_lb.ingress[0].zone_id
     evaluate_target_health = false
   }
   depends_on = [aws_route53_record.lb_cname]
