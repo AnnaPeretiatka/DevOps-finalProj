@@ -13,7 +13,6 @@ data "aws_secretsmanager_secret_version" "pg_master" {
 locals {
   db_secret = jsondecode(data.aws_secretsmanager_secret_version.pg_master.secret_string)
   db_pass   = local.db_secret.password
-  depends_on = [module.db]
 }
 
 # ---------------------------- Helm release for app ---------------------------------------# 
@@ -116,6 +115,21 @@ resource "helm_release" "statuspage" {
   set {
     name = "ingress.hosts[0].paths[0].pathType"
     value = "Prefix"
+  }
+
+  set {
+    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/load-balancer-name"
+    value = "statuspage-ay-alb"
+  }
+
+  set {
+    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/scheme"
+    value = "internet-facing"
+  }
+  
+  set {
+    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/target-type"
+    value = "ip"
   }
 
   # ---------------------------- S3
