@@ -124,14 +124,16 @@ locals {
 
 # ---------------- get ALB - dns_name + original hosted zone id -------------------#
 data "aws_lb" "ingress" {
-  count      = local.alb_name != null && var.enable_app ? 1 : 0
+  #count     = local.alb_name != null && var.enable_app ? 1 : 0
+  count      = var.enable_app && local.ingress_hostname != "" ? 1 : 0
   name       = local.alb_name
   depends_on = [time_sleep.wait_for_alb]
 }
 
 # ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
 resource "aws_route53_record" "lb_cname" {
-  count   = local.ingress_hostname != "" && var.enable_app ? 1 : 0
+  #count   = local.ingress_hostname != "" && var.enable_app ? 1 : 0
+  count   = var.enable_app && local.ingress_hostname != "" ? 1 : 0
   zone_id = aws_route53_zone.this.zone_id
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
@@ -146,7 +148,8 @@ resource "aws_route53_record" "lb_cname" {
 
 # ------------------ Root A/ALIAS -> ALB ------------------------------------------#
 resource "aws_route53_record" "root_alias" {
-  count   = local.ingress_hostname != "" && var.enable_app ? 1 : 0
+  #count   = local.ingress_hostname != "" && var.enable_app ? 1 : 0
+  count   = var.enable_app && local.ingress_hostname != "" ? 1 : 0
   zone_id = aws_route53_zone.this.zone_id
   name    = var.domain_name
   type    = "A"
@@ -161,7 +164,8 @@ resource "aws_route53_record" "root_alias" {
 
 # ------------------- www CNAME -> apex -----------------------------------------#
 resource "aws_route53_record" "www_cname" {
-  count   = local.ingress_hostname != "" && var.enable_app ? 1 : 0
+  #count   = local.ingress_hostname != "" && var.enable_app ? 1 : 0
+  count   = var.enable_app && local.ingress_hostname != "" ? 1 : 0
   zone_id = aws_route53_zone.this.zone_id
   name    = "www"
   type    = "CNAME"
