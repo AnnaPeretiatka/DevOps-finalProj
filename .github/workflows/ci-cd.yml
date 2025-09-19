@@ -71,7 +71,8 @@ jobs:
       # 8. Sanity check connectivity
       - name: Sanity check connectivity
         run: |
-          kubectl version --short
+          kubectl version --client
+          kubectl cluster-info
           kubectl get ns
           kubectl get nodes -o wide
 
