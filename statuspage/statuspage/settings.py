@@ -401,7 +401,11 @@ if cfg:
     if hasattr(cfg, "AWS_QUERYSTRING_AUTH"): AWS_QUERYSTRING_AUTH = cfg.AWS_QUERYSTRING_AUTH  
     if hasattr(cfg, "AWS_S3_FILE_OVERWRITE"): AWS_S3_FILE_OVERWRITE = cfg.AWS_S3_FILE_OVERWRITE 
     if hasattr(cfg, "AWS_DEFAULT_ACL"): AWS_DEFAULT_ACL = cfg.AWS_DEFAULT_ACL 
-    if hasattr(cfg, "AWS_S3_CUSTOM_DOMAIN"): AWS_S3_CUSTOM_DOMAIN = cfg.AWS_S3_CUSTOM_DOMAIN  
+    if hasattr(cfg, "AWS_S3_CUSTOM_DOMAIN"): AWS_S3_CUSTOM_DOMAIN = cfg.AWS_S3_CUSTOM_DOMAIN 
+
+    # Make Django actually uses S3 backends
+    if hasattr(cfg, "STATICFILES_STORAGE"): STATICFILES_STORAGE = cfg.STATICFILES_STORAGE 
+    if hasattr(cfg, "DEFAULT_FILE_STORAGE"): DEFAULT_FILE_STORAGE = cfg.DEFAULT_FILE_STORAGE 
 
     # Database (cfg.DATABASE is a single dict suitable for DATABASES['default'])
     if hasattr(cfg, "DATABASE"): 

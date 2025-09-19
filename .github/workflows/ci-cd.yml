@@ -71,15 +71,14 @@ jobs:
       # 8. Sanity check connectivity
       - name: Sanity check connectivity
         run: |
-          kubectl version --client
-          kubectl cluster-info
+          kubectl version
           kubectl get ns
           kubectl get nodes -o wide
 
       # 9. Deploy/upgrade the app using Helm chart
       - name: Helm upgrade/install
         run: |
-          set -euo pipefail
+          set -eo pipefail
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
             --create-namespace \
