@@ -124,7 +124,11 @@ locals {
 # ---------------- get ALB - dns_name + original hosted zone id -------------------#
 data "aws_lb" "ingress" {
   count     = var.enable_app ? 1 : 0
-  name       = local.alb_name
+  #name       = local.alb_name
+  tags = {
+    "kubernetes.io/cluster/${module.eks.cluster_name}" = "owned"
+    "kubernetes.io/service-name" = "statuspage/statuspage"
+  }
   depends_on = [time_sleep.wait_for_alb]
 }
 
