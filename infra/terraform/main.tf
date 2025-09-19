@@ -473,7 +473,7 @@ output "db_name" {
 output "eks_cluster_sg_id" {
   value = module.eks.cluster_security_group_id
 }
-
+/*
 output "static_bucket_name" { 
   value = aws_s3_bucket.static.bucket 
 }
@@ -482,7 +482,7 @@ output "web_sa_role_arn"    {
   value = aws_iam_role.web_sa.arn 
 }
 
-/*
+
 output "acm_arn" {
   value = aws_acm_certificate_validation.cert.certificate_arn
 }
