@@ -151,7 +151,7 @@ resource "aws_route53_record" "root_alias" {
 
   alias {
     name                   = local.ingress_hostname
-    zone_id                = data.aws_lb.ingress[0].zone_id
+    zone_id                = try(data.aws_lb.ingress[0].zone_id, "")
     evaluate_target_health = false
   }
   depends_on = [aws_route53_record.lb_cname]
