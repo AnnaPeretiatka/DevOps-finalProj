@@ -239,7 +239,7 @@ resource "aws_route53_zone" "this" {
 # --------------------------------------------- S3 ----------------------------------------------
 
 resource "aws_s3_bucket" "static" {
-  bucket        = "${var.project_name}-staticS3-${data.aws_caller_identity.current.account_id}"
+  bucket        = "${var.project_name}-statics3-${data.aws_caller_identity.current.account_id}"
   force_destroy = true
   tags          = local.tags
 }
