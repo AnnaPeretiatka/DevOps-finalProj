@@ -275,7 +275,7 @@ data "aws_iam_policy_document" "web_sa_trust" {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals { 
-      type = "Federated", 
+      type = "Federated"
       identifiers = [module.eks.oidc_provider_arn] 
     }
     condition {
