@@ -50,6 +50,11 @@ jobs:
 
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
           echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
+      
+      # 5. Install Helm CLI early
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
 
       # 5. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
       - name: Update kubeconfig for EKS
@@ -65,8 +70,7 @@ jobs:
       # 7. Deploy/upgrade the app using Helm chart
       - name: Helm upgrade/install
         run: |
-          # Helm values are set from secrets & env.
-          # We pass the repository and tag so web/worker/scheduler use the same image version.
+          # Helm values are set from secrets & env - we pass the repository and tag so web/worker/scheduler use the same image version.
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
             --create-namespace \
@@ -76,4 +80,4 @@ jobs:
             --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
             --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
-            --set acmArn="${{ secrets.ACM_ARN }}"
+            # --set acmArn="${{ secrets.ACM_ARN }}"
