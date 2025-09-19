@@ -119,7 +119,7 @@ resource "helm_release" "statuspage" {
   depends_on = [
     aws_eks_node_group.default,   
     helm_release.alb,
-    module.db
+    module.db,
     null_resource.docker_build_push
 
   ]
