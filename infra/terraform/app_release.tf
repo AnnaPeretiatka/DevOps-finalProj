@@ -153,7 +153,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "serviceAccount.name"
-    value = "web_sa"
+    value = "statuspage-web"
   }
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"

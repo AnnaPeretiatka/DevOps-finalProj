@@ -295,7 +295,7 @@ data "aws_iam_policy_document" "web_sa_trust" {
     condition {
       test     = "StringEquals"
       variable = "${module.eks.oidc_provider}:sub"
-      values   = ["system:serviceaccount:statuspage:statuspage-web"] # SA we'll create in Helm
+      values   = ["system:serviceaccount:statuspage:statuspage-web"]
     }
   }
 }
