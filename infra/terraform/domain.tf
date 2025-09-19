@@ -92,7 +92,7 @@ output "status_hostname" {
 # Ensure the controller & app chart are up before we query the Ingress status
 resource "time_sleep" "wait_for_alb" {
   count          = var.enable_app ? 1 : 0
-  create_duration = "180s"
+  create_duration = "300s"
   depends_on      = [
     helm_release.statuspage,
     helm_release.alb
@@ -124,11 +124,7 @@ locals {
 # ---------------- get ALB - dns_name + original hosted zone id -------------------#
 data "aws_lb" "ingress" {
   count     = var.enable_app ? 1 : 0
-  #name       = local.alb_name
-  tags = {
-    "kubernetes.io/cluster/${module.eks.cluster_name}" = "owned"
-    "kubernetes.io/service-name" = "statuspage/statuspage"
-  }
+  name       = local.alb_name
   depends_on = [time_sleep.wait_for_alb]
 }
 
