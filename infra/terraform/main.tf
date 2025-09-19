@@ -44,21 +44,6 @@ resource "aws_ecr_repository" "app" {
   tags         = local.tags
 }
 
-resource "null_resource" "docker_build_push" {
-  provisioner "local-exec" {
-    command = <<EOT
-      aws ecr get-login-password --region ${var.aws_region} \
-        | docker login --username AWS --password-stdin ${aws_ecr_repository.app.repository_url}
-
-      docker build -t ${aws_ecr_repository.app.repository_url}:first ${path.module}/..
-      docker push ${aws_ecr_repository.app.repository_url}:first
-    EOT
-  }
-
-  depends_on = [aws_ecr_repository.app]
-}
-
-
 # ------------------------------------------------ EKS Cluster ---------------------------------------------
 
 module "eks" {
