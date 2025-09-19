@@ -153,13 +153,12 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "serviceAccount.name"
-    value = "statuspage-web"
+    value = "web_sa"
   }
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.web_sa.arn
   }
-
 
   # app chart only installs after nodes exist and the ALB controller is ready
   # nodes ready so Pods can schedule | ALB controller watches Ingress | DB ready (its address resolves)

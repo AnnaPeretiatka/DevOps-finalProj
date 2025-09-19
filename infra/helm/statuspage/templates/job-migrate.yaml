@@ -17,7 +17,8 @@ spec:
       containers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["python","statuspage/manage.py","migrate","--noinput"]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python","statuspage/manage.py","migrate","--noinput"]      
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }

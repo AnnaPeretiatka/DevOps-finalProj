@@ -249,15 +249,29 @@ resource "aws_s3_bucket_versioning" "static" {
   versioning_configuration { status = "Enabled" }
 }
 
-resource "aws_s3_bucket_public_access_block" "static" {
-  bucket                  = aws_s3_bucket.static.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+resource "aws_s3_bucket_policy" "static_public_read" {
+  bucket = aws_s3_bucket.static.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Sid       = "PublicReadStatic",
+      Effect    = "Allow",
+      Principal = "*",
+      Action    = ["s3:GetObject"],
+      Resource  = "arn:aws:s3:::${aws_s3_bucket.static.bucket}/*"
+    }]
+  })
 }
 
-# Optional: allow browser GETs via your ALB hostname/CORS (safe defaults)
+resource "aws_s3_bucket_public_access_block" "static" {
+  bucket                  = aws_s3_bucket.static.id
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# allow browser GETs via your ALB hostname/CORS (safe defaults)
 resource "aws_s3_bucket_cors_configuration" "static" {
   bucket = aws_s3_bucket.static.id
   cors_rule {
@@ -427,7 +441,7 @@ resource "random_password" "secret_key" {
   special = true
 }
 
-# --------------------------------------------- Outputs ---------------------------------------
+# *********************************************** Outputs ***********************************************
 
 # ------------------- SECRETS -------------------
 output "secret_key" {

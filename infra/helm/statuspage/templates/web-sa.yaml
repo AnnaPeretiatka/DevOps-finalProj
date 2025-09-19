@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web-sa           
+  namespace: statuspage
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::992382545251:role/status-page-ay-web-sa

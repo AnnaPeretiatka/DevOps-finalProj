@@ -74,13 +74,21 @@ resource "aws_route53domains_domain" "this" {
   tags = local.tags
 }
 */
+
+# -------------------------- ★ If domain was creted before and not from terraform above -------------------------#
+data "aws_route53_zone" "authoritative" {
+  zone_id = "Z00067461X470B5S2F567"      
+}
+
 # -------------------------- Outputs -------------------------#
 output "route53_zone_id" {
-  value = aws_route53_zone.this.zone_id
+  #value = aws_route53_zone.this.zone_id 
+  value = data.aws_route53_zone.authoritative.zone_id # ★
 }
 
 output "route53_name_servers" {
-  value = aws_route53_zone.this.name_servers
+  #value = aws_route53_zone.this.name_servers
+  value = data.aws_route53_zone.authoritative.name_servers  # ★
 }
 
 output "status_hostname" {
@@ -187,7 +195,8 @@ data "aws_lb" "ingress" {
 # ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
 resource "aws_route53_record" "lb_cname" {
   count   = var.enable_app ? 1 : 0
-  zone_id = aws_route53_zone.this.zone_id
+  #zone_id = aws_route53_zone.this.zone_id
+  zone_id = data.aws_route53_zone.authoritative.zone_id  # ★
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
   ttl     = 60
@@ -201,7 +210,8 @@ resource "aws_route53_record" "lb_cname" {
 # ------------------ Root A/ALIAS -> ALB ------------------------------------------#
 resource "aws_route53_record" "root_alias" {
   count   = var.enable_app ? 1 : 0
-  zone_id = aws_route53_zone.this.zone_id
+  #zone_id = aws_route53_zone.this.zone_id
+  zone_id = data.aws_route53_zone.authoritative.zone_id  # ★
   name    = var.domain_name
   type    = "A"
 
@@ -216,7 +226,8 @@ resource "aws_route53_record" "root_alias" {
 # ------------------- www CNAME -> apex -----------------------------------------#
 resource "aws_route53_record" "www_cname" {
   count   = var.enable_app ? 1 : 0
-  zone_id = aws_route53_zone.this.zone_id
+  #zone_id = aws_route53_zone.this.zone_id
+  zone_id = data.aws_route53_zone.authoritative.zone_id  # ★
   name    = "www"
   type    = "CNAME"
   ttl     = 300

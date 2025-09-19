@@ -18,6 +18,7 @@ spec:
       containers:
         - name: collectstatic
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python","statuspage/manage.py","collectstatic","--noinput"]
           envFrom:
             - configMapRef: { name: statuspage-config }

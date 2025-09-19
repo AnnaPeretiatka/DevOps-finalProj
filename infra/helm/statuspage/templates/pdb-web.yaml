@@ -1,6 +1,14 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
-metadata: { name: statuspage-web, namespace: statuspage }
+metadata: { 
+  name: statuspage-web, 
+  namespace: statuspage 
+}
 spec:
   minAvailable: {{ .Values.pdb.webMinAvailable }}
-  selector: { matchLabels: { app: statuspage, tier: web } }
+  selector: { 
+    matchLabels: { 
+      app: statuspage, 
+      tier: web 
+    } 
+  }
