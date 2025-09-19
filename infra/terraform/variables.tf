@@ -64,6 +64,16 @@ variable "redis_url" {
   default     = "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"
 }
 
+variable "enable_alb" {
+  type    = bool
+  default = false
+}
+
+variable "enable_app" {
+  type    = bool
+  default = false
+}
+
 variable "domain_contact" {
   description = "Contact used for admin/registrant/tech (all three)"
   type = object({

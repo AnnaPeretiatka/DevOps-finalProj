@@ -95,6 +95,7 @@ resource "aws_iam_role_policy_attachment" "alb_attach" {
 # -------- Helm install: let Helm CREATE the SA + annotate it with our IRSA role --------
 
 resource "helm_release" "alb" {
+  count      = var.enable_alb ? 1 : 0
   name       = "aws-load-balancer-controller"
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"

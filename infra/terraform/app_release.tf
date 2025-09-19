@@ -16,6 +16,7 @@ locals {
 # ---------------------------- Helm release for app ---------------------------------------# 
 
 resource "helm_release" "statuspage" {
+  count      = var.enable_app ? 1 : 0
   name             = "statuspage"
   namespace        = "statuspage"
   create_namespace = true
