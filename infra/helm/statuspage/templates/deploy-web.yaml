@@ -20,6 +20,7 @@ spec:
         app: statuspage
         tier: web
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
         - name: web
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -31,6 +32,13 @@ spec:
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.s3.region | quote }}
+            - name: AWS_STORAGE_BUCKET_NAME
+              value: {{ .Values.s3.bucket | quote }}
+            - name: DJANGO_SETTINGS_MODULE
+              value: {{ .Values.env.DJANGO_SETTINGS_MODULE | quote }}
           readinessProbe:
             httpGet:
               path: /

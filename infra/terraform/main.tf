@@ -420,12 +420,26 @@ resource "aws_iam_role_policy_attachment" "github_deploy_attach" {
   policy_arn = aws_iam_policy.deploy_policy.arn
 }
 
+# --------------------------------------------- secret key ----------------------------------------------
+
+resource "random_password" "secret_key" {
+  length  = 50
+  special = true
+}
 
 # --------------------------------------------- Outputs ---------------------------------------
+
+# ------------------- SECRETS -------------------
+output "secret_key" {
+  value     = random_password.secret_key.result
+  sensitive = true
+}
 
 output "github_deploy_role_arn" {
   value = aws_iam_role.github_deploy.arn
 }
+
+# ------------------- EKS -------------------
 
 output "cluster_name" {
   value = module.eks.cluster_name
@@ -434,6 +448,12 @@ output "cluster_name" {
 output "aws_region" {
   value = var.aws_region
 }
+
+output "eks_cluster_sg_id" {
+  value = module.eks.cluster_security_group_id
+}
+
+# ------------------- NETWORK -------------------
 
 output "vpc_id" {
   value = module.vpc.vpc_id
@@ -447,9 +467,13 @@ output "public_subnets" {
   value = module.vpc.public_subnets
 }
 
+# ------------------- ECR -------------------
+
 output "ecr_repo_url" {
   value = aws_ecr_repository.app.repository_url
 }
+
+# ------------------- RDS -------------------
 
 output "rds_endpoint" {
   value = module.db.db_instance_endpoint
@@ -467,10 +491,12 @@ output "db_name" {
   value = module.db.db_instance_name
 }
 
-output "eks_cluster_sg_id" {
-  value = module.eks.cluster_security_group_id
+output "db_username" {
+  value = var.db_username
 }
-/*
+
+# ------------------- S3 -------------------
+
 output "static_bucket_name" { 
   value = aws_s3_bucket.static.bucket 
 }
@@ -479,7 +505,9 @@ output "web_sa_role_arn"    {
   value = aws_iam_role.web_sa.arn 
 }
 
+# ------------------- acm_certificate -------------------
 
+/*
 output "acm_arn" {
   value = aws_acm_certificate_validation.cert.certificate_arn
 }

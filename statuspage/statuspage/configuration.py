@@ -6,6 +6,34 @@ from urllib.parse import urlparse
 import dj_database_url
 
 
+USE_S3 = True
+
+if USE_S3:
+    INSTALLED_APPS += ["storages"]
+    AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "us-east-1")
+    AWS_QUERYSTRING_AUTH = False  # optional: cleaner URLs
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+
+    # Optional: custom domain (CloudFront)
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
+    if AWS_S3_CUSTOM_DOMAIN:
+        STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+    else:
+        STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
+
+    STORAGES = {
+      "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+      },
+      "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+      },
+    }
+else:
+    # your old local static setup
+    STATIC_URL = "/static/"
 
 # This is a list of valid fully-qualified domain names (FQDNs) for the Status-Page server. Status-Page will not permit
 # write access to the server via any other hostnames. The first FQDN in the list will be treated as the preferred name.

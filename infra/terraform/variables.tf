@@ -53,10 +53,10 @@ variable "domain_name" {
     type = string
 }
 
-variable "secret_key" {
-  type = string
-  description = "Django SECRET_KEY"
-}
+#variable "secret_key" {
+#  type = string
+#  description = "Django SECRET_KEY"
+#}
 
 variable "redis_url" {
   type        = string

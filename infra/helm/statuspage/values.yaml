@@ -39,8 +39,8 @@ env:
     password: "" 
 
 service: { 
-  port: 80,
-  targetPort: 8000
+  port: 80, # what the Service (and ALB) will expose
+  targetPort: 8000 # the port Gunicorn listens on inside the pod
 }
 
 ingress:
@@ -69,25 +69,18 @@ pdb:
   webMinAvailable: 1
 
 migrations:
-  enabled: false
+  enabled: true
 
 collectstatic:
   enabled: true
 
 manageNamespace: false
 
-persistence:
-  enabled: false
-  storageClass: efs-sc
-  size: 1Gi
-
 s3:
-  bucket: ""                # will set from Terraform output at deploy time
-  region: "us-east-1"
-  # optional if you later front with CloudFront:
-  customDomain: ""          # e.g., cdn.status-page-ay.com
-
+  bucket: ""   # will fill in from Terraform output later
+  region: us-east-1
+  customDomain: ""
 serviceAccount:
   create: true
   name: statuspage-web
-  annotations: {}           # set IRSA annotation from Terraform at deploy
+  annotations: {}  # Terraform will inject IRSA annotation

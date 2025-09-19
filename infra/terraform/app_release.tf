@@ -45,7 +45,7 @@ resource "helm_release" "statuspage" {
   # -------------------------- Core env
   set {
     name = "env.SECRET_KEY"
-    value = var.secret_key
+    value = random_password.secret_key.result
   }
   set {
     name = "env.REDIS_URL"
@@ -117,6 +117,17 @@ resource "helm_release" "statuspage" {
     name = "ingress.hosts[0].paths[0].pathType"
     value = "Prefix"
   }
+
+  # ---------------------------- S3
+  set {
+  name  = "s3.bucket"
+  value = aws_s3_bucket.static.bucket
+  }
+  set {
+    name  = "s3.region"
+    value = var.aws_region
+  }
+
 
   # app chart only installs after nodes exist and the ALB controller is ready
   # nodes ready so Pods can schedule | ALB controller watches Ingress | DB ready (its address resolves)
