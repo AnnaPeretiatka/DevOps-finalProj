@@ -1,6 +1,6 @@
 image:
   repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo
-  tag: first
+  tag: latest
   pullPolicy: IfNotPresent 
 
 replicaCounts:
