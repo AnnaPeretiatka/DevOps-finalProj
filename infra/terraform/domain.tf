@@ -89,6 +89,19 @@ output "status_hostname" {
 
 # ------------------------------------- Wait for ALB Controller + App Ingress -------------------------------------
 
+resource "kubernetes_ingress_class" "alb" {
+  count = var.enable_alb ? 1 : 0
+  metadata {
+    name = "alb"
+  }
+  spec {
+    controller = "ingress.k8s.aws/alb"
+  }
+  depends_on = [
+    helm_release.alb
+  ]
+}
+
 # Ensure the controller & app chart are up before we query the Ingress status
 /*
 resource "time_sleep" "wait_for_alb" {
@@ -105,23 +118,23 @@ resource "null_resource" "wait_for_ingress_hostname" {
   count = var.enable_app ? 1 : 0
 
   provisioner "local-exec" {
-    command = <<EOT
-    set -e
-    for i in {1..45}; do
-      host=$(kubectl -n statuspage get ingress statuspage -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-      if [ -n "$host" ]; then
-        echo "Ingress hostname ready: $host"
-        exit 0
-      fi
-      echo "Waiting for ingress hostname (attempt $i/45)..."
-      sleep 10
-    done
-    echo "Timeout waiting for ingress hostname"
-    exit 1
-    EOT
+    command = <<'EOT'
+set -e
+for i in $(seq 1 60); do
+  host=$(kubectl -n statuspage get ingress statuspage -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+  if [ -n "$host" ]; then
+    echo "Ingress hostname ready: $host"
+    exit 0
+  fi
+  echo "Waiting for ingress hostname (attempt $i/60)..."
+  sleep 10
+done
+echo "Timeout waiting for ingress hostname"
+exit 1
+EOT
   }
 
-  depends_on = [helm_release.statuspage]
+  depends_on = [helm_release.statuspage]  # keep this
 }
 
 # Pull the Ingress (once created by Helm)
