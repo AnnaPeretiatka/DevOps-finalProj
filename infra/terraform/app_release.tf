@@ -1,5 +1,4 @@
 # ---------------------------- Get DB secret dynamically ---------------------------------------# 
-/*
 data "aws_db_instance" "pg" {
   db_instance_identifier = module.db.db_instance_identifier
 }
@@ -36,7 +35,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "image.tag"
-    value = "latest2"
+    value = "first"
   }
 
   # -------------------------- Core env
@@ -123,4 +122,3 @@ resource "helm_release" "statuspage" {
     module.db               
   ]
 }
-*/

@@ -227,45 +227,85 @@ resource "aws_route53_zone" "this" {
 }
 
 # --------------------------------------------- S3 ----------------------------------------------
-/*
+
 resource "aws_s3_bucket" "static" {
-  bucket = "${var.project_name}-S3"
+  bucket        = "${var.project_name}-staticS3-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
+  tags          = local.tags
 }
 
-# Allow public reads for objects (quick start; later consider CloudFront)
-resource "aws_s3_bucket_public_access_block" "pab" {
+resource "aws_s3_bucket_versioning" "static" {
+  bucket = aws_s3_bucket.static.id
+  versioning_configuration { status = "Enabled" }
+}
+
+resource "aws_s3_bucket_public_access_block" "static" {
   bucket                  = aws_s3_bucket.static.id
-  block_public_acls       = false
-  ignore_public_acls      = false
-  block_public_policy     = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-data "aws_iam_policy_document" "public_read" {
+# Optional: allow browser GETs via your ALB hostname/CORS (safe defaults)
+resource "aws_s3_bucket_cors_configuration" "static" {
+  bucket = aws_s3_bucket.static.id
+  cors_rule {
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["http://${var.domain_name}", "https://${var.domain_name}"]
+    allowed_headers = ["*"]
+    max_age_seconds = 300
+  }
+}
+
+# --------------------------------------------- S3 role ---------------------------------------------
+/*
+data "aws_iam_policy_document" "web_sa_trust" {
   statement {
-    sid     = "PublicReadGetObject"
     effect  = "Allow"
-    actions = ["s3:GetObject"]
+    actions = ["sts:AssumeRoleWithWebIdentity"]
     principals { 
-      type = "*"
-      identifiers = ["*"] 
+      type = "Federated", 
+      identifiers = [module.eks.oidc_provider_arn] 
     }
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:sub"
+      values   = ["system:serviceaccount:statuspage:statuspage-web"] # SA we'll create in Helm
+    }
+  }
+}
+
+resource "aws_iam_role" "web_sa" {
+  name               = "${var.project_name}-web-sa"
+  assume_role_policy = data.aws_iam_policy_document.web_sa_trust.json
+  tags               = local.tags
+}
+
+data "aws_iam_policy_document" "web_s3" {
+  statement {
+    sid     = "AllowListBucket"
+    actions = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.static.arn]
+  }
+  statement {
+    sid     = "AllowObjectRW"
+    actions = ["s3:GetObject","s3:PutObject","s3:DeleteObject"]
     resources = ["${aws_s3_bucket.static.arn}/*"]
   }
 }
 
-resource "aws_s3_bucket_policy" "policy" {
-  bucket = aws_s3_bucket.static.id
-  policy = data.aws_iam_policy_document.public_read.json
+resource "aws_iam_policy" "web_s3" {
+  name   = "${var.project_name}-web-s3"
+  policy = data.aws_iam_policy_document.web_s3.json
 }
 
-output "bucket" {
-  value = aws_s3_bucket.static.bucket
-}
-output "bucket_domain" {
-  value = "s3.${var.region != null ? var.region : "us-east-1"}.amazonaws.com"
+resource "aws_iam_role_policy_attachment" "web_sa_attach" {
+  role       = aws_iam_role.web_sa.name
+  policy_arn = aws_iam_policy.web_s3.arn
 }
 */
+
 # ---------------------------- ACM_certificate - not prmissions error -------------------------------
 
 /*
@@ -368,126 +408,6 @@ resource "aws_iam_role_policy_attachment" "github_deploy_attach" {
   policy_arn = aws_iam_policy.deploy_policy.arn
 }
 
-/*
-# --------------------------------------------- ALB - not used at ALL ----------------------------------------------
-
-resource "aws_security_group" "alb" {
-  name        = "${var.project_name}-alb-sg"
-  description = "Allow inbound HTTP/HTTPS to ALB"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = local.tags
-}
-
-# Application Load Balancer
-resource "aws_lb" "app" {
-  name               = "${var.project_name}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = module.vpc.public_subnets
-  tags               = local.tags
-}
-
-
-# Listener for HTTP (80)
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.app.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "ALB is alive"
-      status_code  = "200"
-    }
-  }
-}
-
-# Listener for HTTPS (443) - requires ACM cert - currently not working
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.app.arn
-  port              = 443
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate.cert.arn
-
-  default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "ALB HTTPS is alive"
-      status_code  = "200"
-    }
-  }
-}
-*/
-
-
-# --------------------------------------------- WAF - not working ----------------------------------------------
-
-/*
-resource "aws_wafv2_web_acl" "alb_waf" {
-  name        = "${var.project_name}-waf"
-  description = "WAF for public ALB"
-  scope       = "REGIONAL"
-  default_action {
-    allow {}
-  }
-  rule {
-    name     = "AWS-AWSManagedRulesCommonRuleSet"
-    priority = 1
-    override_action {
-      none {}
-    }
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesCommonRuleSet"
-        vendor_name = "AWS"
-      }
-    }
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "waf"
-      sampled_requests_enabled   = true
-    }
-  }
-  visibility_config {
-    cloudwatch_metrics_enabled = true
-    metric_name                = "waf"
-    sampled_requests_enabled   = true
-  }
-  tags = local.tags
-}
-
-resource "aws_wafv2_web_acl_association" "alb_waf_assoc" {
-  resource_arn = aws_lb.app.arn
-  web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
-}
-*/
 
 # --------------------------------------------- Outputs ---------------------------------------
 
@@ -537,6 +457,14 @@ output "db_name" {
 
 output "eks_cluster_sg_id" {
   value = module.eks.cluster_security_group_id
+}
+
+output "static_bucket_name" { 
+  value = aws_s3_bucket.static.bucket 
+}
+
+output "web_sa_role_arn"    { 
+  value = aws_iam_role.web_sa.arn 
 }
 
 /*

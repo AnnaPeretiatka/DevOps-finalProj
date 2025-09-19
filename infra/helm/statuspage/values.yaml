@@ -1,6 +1,6 @@
 image:
   repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/status-page-ay-repo
-  tag: latest2
+  tag: first
   pullPolicy: IfNotPresent 
 
 replicaCounts:
@@ -80,3 +80,14 @@ persistence:
   enabled: false
   storageClass: efs-sc
   size: 1Gi
+
+s3:
+  bucket: ""                # will set from Terraform output at deploy time
+  region: "us-east-1"
+  # optional if you later front with CloudFront:
+  customDomain: ""          # e.g., cdn.status-page-ay.com
+
+serviceAccount:
+  create: true
+  name: statuspage-web
+  annotations: {}           # set IRSA annotation from Terraform at deploy
