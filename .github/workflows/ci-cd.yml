@@ -81,10 +81,10 @@ jobs:
 
           
 
-          DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}?sslmode=require"
+          DATABASE_URL="postgresql://statuspage:vk$BbI#jG6XMG$5J0>F9jc[0xu*J@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require"
           echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
 
-      # 🚀 Deploy with Helm
+      # Deploy with Helm
       - name: Deploy via Helm
         env:
           STATUS_HOSTNAME: ${{ secrets.STATUS_HOSTNAME }}
