@@ -96,12 +96,20 @@ resource "aws_acm_certificate" "site" {
 }
 
 resource "aws_route53_record" "cert_validation" {
-  count   = var.enable_app ? length(aws_acm_certificate.site[0].domain_validation_options) : 0
+  for_each = var.enable_app ? {
+    for dvo in aws_acm_certificate.site[0].domain_validation_options :
+    dvo.domain_name => {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  } : {}
+
   zone_id = data.aws_route53_zone.authoritative.zone_id
-  name    = aws_acm_certificate.site[0].domain_validation_options[count.index].resource_record_name
-  type    = aws_acm_certificate.site[0].domain_validation_options[count.index].resource_record_type
-  records = [aws_acm_certificate.site[0].domain_validation_options[count.index].resource_record_value]
+  name    = each.value.name
+  type    = each.value.type
   ttl     = 60
+  records = [each.value.value]
 }
 
 resource "aws_acm_certificate_validation" "site" {
@@ -111,7 +119,7 @@ resource "aws_acm_certificate_validation" "site" {
 }
 
 output "acm_arn" {
-  value = aws_acm_certificate_validation.site[0].certificate_arn
+  value = var.enable_app ? aws_acm_certificate_validation.site[0].certificate_arn : null
 }
 
 

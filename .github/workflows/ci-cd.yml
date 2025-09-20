@@ -20,6 +20,7 @@ env:
   DB_HOST: status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com
   DB_NAME: statuspage
 
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -108,7 +109,27 @@ jobs:
 
       # 9. Deploy via Helm
       - name: Deploy via Helm (app only)
+        env:
+          STATUS_HOSTNAME: status-page-ay.com   # the hostname for the status page
+          DATABASE_URL: ${{ env.DATABASE_URL }} # from prior step
+          ACM_ARN: ${{ secrets.ACM_ARN }}                   # optional; leave blank if not ready
         run: |
+          set -euo pipefail
+
+          # Build ALB HTTPS annotations only when ACM_ARN is set
+          ACM_FLAGS=""
+          if [[ -n "${ACM_ARN:-}" ]]; then
+            # Prefer your chart's single knob if you kept .Values.acmArn
+            ACM_FLAGS="--set acmArn='${ACM_ARN}' --set env.SITE_PROTOCOL=https"
+          else
+            ACM_FLAGS="--set env.SITE_PROTOCOL=http"
+          fi
+          
+          #--set ingress.annotations."alb\.ingress\.kubernetes\.io/listen-ports"='\''[{"HTTP":80},{"HTTPS":443}]'\'' \
+          #--set ingress.annotations."alb\.ingress\.kubernetes\.io/certificate-arn"="'"${ACM_ARN}"'" \
+          #--set ingress.annotations."alb\.ingress\.kubernetes\.io/ssl-redirect"="443"'
+          
+
           set -euo pipefail
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
