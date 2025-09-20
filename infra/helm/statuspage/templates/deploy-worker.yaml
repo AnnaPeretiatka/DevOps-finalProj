@@ -19,7 +19,7 @@ spec:
         - name: worker
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python", "statuspage/manage.py", "rqworker", "high", "default", "low"]
+          command: ["python", "/app/statuspage/manage.py", "rqworker", "high", "default", "low"]
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }

@@ -24,7 +24,7 @@ spec:
         - name: scheduler
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python","statuspage/manage.py","rqscheduler"]
+          command: ["python","/app/statuspage/manage.py","rqscheduler"]
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
