@@ -61,11 +61,16 @@ jobs:
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
           echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
       
-      # 6. Install Helm
+      # 6. Install Helm + Terraform
       - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
           version: 'v3.14.4'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3  # ★ installs terraform on the runner
+        with:
+          terraform_version: 1.9.5
 
       # 7. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
       - name: Update kubeconfig for EKS
