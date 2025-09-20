@@ -31,6 +31,26 @@ resource "helm_release" "loki" {
     value = "7Gi" 
   }  
 
+  set { 
+    name = "backend.enabled" 
+    value = "false" 
+  }
+
+  set { 
+    name = "read.enabled"    
+    value = "false" 
+  }
+
+  set { 
+    name = "write.enabled"  
+    value = "false" 
+  }
+
+  set { 
+    name = "gateway.enabled"
+    value = "false" 
+  }
+
   #  ----------- Network ------------------------
   set { 
     name = "loki.auth_enabled" 
@@ -48,10 +68,6 @@ resource "helm_release" "loki" {
   }
   
   #  ---------- # retention (time-based) ----------
-  set { 
-    name = "loki.compactor.enabled" 
-    value = "true" 
-  }
 
   set { 
     name = "loki.limits_config.retention_period"
@@ -155,7 +171,7 @@ resource "helm_release" "kps" {
   }
   set {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
-    value = "[{\"HTTP\":80},{\"HTTPS\":443}]"
+    value = "'[{\"HTTP\":80},{\"HTTPS\":443}]'"
   }
   set {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/certificate-arn"
