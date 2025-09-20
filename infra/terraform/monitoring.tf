@@ -71,6 +71,11 @@ resource "helm_release" "loki" {
     name = "service.port" 
     value = "3100" 
   }
+
+  set { 
+    name = "loki.useTestSchema" 
+    value = "true" 
+  }
   
 
   # Make sure cluster is ready first
@@ -169,11 +174,8 @@ resource "helm_release" "kps" {
     value = "ip"
   }
   set {
-  name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
-    value = jsonencode([
-      { HTTP  = 80 },
-      { HTTPS = 443 }
-    ])
+    name  = "grafana.ingress.annotations[alb\\.ingress\\.kubernetes\\.io/listen-ports]"
+    value = jsonencode([{HTTP=80},{HTTPS=443}])
   }
   set {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/certificate-arn"
