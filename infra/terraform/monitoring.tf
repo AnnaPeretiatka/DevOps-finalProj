@@ -168,9 +168,12 @@ resource "helm_release" "kps" {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/target-type"
     value = "ip"
   }
-  set_string {
-    name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
-    value = "[{\"HTTP\":80},{\"HTTPS\":443}]"
+  set {
+  name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
+    value = jsonencode([
+      { HTTP  = 80 },
+      { HTTPS = 443 }
+    ])
   }
   set {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/certificate-arn"
