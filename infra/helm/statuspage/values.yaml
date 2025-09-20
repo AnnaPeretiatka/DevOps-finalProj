@@ -57,7 +57,7 @@ ingress:
         - path: /
           pathType: Prefix
 
-acmArn: ""
+acmArn: arn:aws:acm:us-east-1:992382545251:certificate/64de4465-fc68-4518-936f-e298a6c07b51
 
 grafana:
   adminPassword: "change-me"   # or use a Kubernetes secret if preferred
