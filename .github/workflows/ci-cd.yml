@@ -141,9 +141,9 @@ jobs:
             --set-string env.DATABASE_URL="${DATABASE_URL}" \
             --set env.REDIS_URL='${{ secrets.REDIS_URL }}' \
             --set env.STATUS_HOSTNAME="${STATUS_HOSTNAME}" \
-            --set env.ALLOWED_HOSTS="${STATUS_HOSTNAME}"
+            --set env.ALLOWED_HOSTS="${STATUS_HOSTNAME}" \
             --set env.SITE_PROTOCOL='https' \
-            --set collectstatic.enabled=false \ 
+            --set collectstatic.enabled=false \
             --set s3.bucket="status-page-ay-statics3-992382545251" \
             --set s3.region='${{ env.AWS_REGION }}' \
             --set ingress.enabled=true \
