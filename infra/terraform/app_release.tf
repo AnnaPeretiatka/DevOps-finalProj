@@ -123,7 +123,12 @@ resource "helm_release" "statuspage" {
 
   set {
     name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/load-balancer-name"
-    value = "statuspage-ay-alb"
+    value = "statuspage-ay-alb"                                                # ---- shared alb with graffana
+  }
+
+  set {
+    name  = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/group.name"
+    value = "shared-ext"                                                        # ---- shared alb with graffana
   }
 
   set {
