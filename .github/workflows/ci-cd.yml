@@ -72,9 +72,6 @@ jobs:
           kubectl get ns
           kubectl get nodes -o wide
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       # 🔥 Build DATABASE_URL dynamically from RDS Secrets Manager
       - name: Build DATABASE_URL
         run: |
@@ -93,7 +90,7 @@ jobs:
             --query SecretString \
             --output text)
 
-          DB_PASS=$(echo "$DB_SECRET" | jq -r .password | sed 's/[]\/$*.^|[]/\\&/g')
+          DB_PASS=$(echo "$DB_SECRET" | jq -r .password)
 
           DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}?sslmode=require"
           echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
