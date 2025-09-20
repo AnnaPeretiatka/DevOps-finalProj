@@ -228,7 +228,7 @@ resource "aws_route53_record" "root_alias" {
 
   alias {
     name                   = data.kubernetes_ingress_v1.statuspage[0].status[0].load_balancer[0].ingress[0].hostname
-    zone_id                = data.aws_lb_hosted_zone_id.alb.zone_id
+    zone_id                = data.aws_lb_hosted_zone_id.alb.id
     #name                   = aws_route53_record.lb_cname[0].fqdn
     #zone_id                = data.aws_route53_zone.authoritative.zone_id
     evaluate_target_health = false
