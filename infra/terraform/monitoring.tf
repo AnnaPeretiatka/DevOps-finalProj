@@ -104,7 +104,10 @@ resource "helm_release" "kps" {
   }
 
   # Root URL / server domain (optional but nice)
-  set { name = "grafana.env.GF_SERVER_ROOT_URL"; value = "https://grafana.${var.domain_name}" }
+  set { 
+    name = "grafana.env.GF_SERVER_ROOT_URL" 
+    value = "https://grafana.${var.domain_name}" 
+  }
 
   # ----- Ingress (ALB) -----
   set { 
@@ -226,7 +229,3 @@ resource "aws_route53_record" "grafana_alias" {
 
   depends_on = [ null_resource.wait_for_grafana_ingress ]
 }
-
-#You can share the same ALB as your app to save cost by adding both annotations to both ingresses with the same values:
-#alb.ingress.kubernetes.io/group.name: shared-ext
-#alb.ingress.kubernetes.io/load-balancer-name: shared-ext-alb
