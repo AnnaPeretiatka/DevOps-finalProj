@@ -74,6 +74,12 @@ variable "enable_app" {
   default = false
 }
 
+variable "image_tag" {
+  type        = string
+  description = "Container image tag to deploy"
+  default     = "latest"
+}
+
 variable "domain_contact" {
   description = "Contact used for admin/registrant/tech (all three)"
   type = object({

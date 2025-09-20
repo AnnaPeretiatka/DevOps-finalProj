@@ -19,6 +19,8 @@ spec:
       labels:
         app: statuspage
         tier: web
+      annotations:
+        rollouts.commit: "{{ .Values.image.tag }}" # forces pod restart when tag changes
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:

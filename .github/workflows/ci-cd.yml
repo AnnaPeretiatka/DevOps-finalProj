@@ -55,6 +55,9 @@ jobs:
           echo "Pushing image: ${IMAGE_URI}"
           docker push "${IMAGE_URI}"
 
+          docker tag "${IMAGE_URI}" "${{ env.ECR_REPO }}:latest"
+          docker push "${{ env.ECR_REPO }}:latest"
+
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
           echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
       
@@ -75,24 +78,17 @@ jobs:
           kubectl get ns
           kubectl get nodes -o wide
 
-      # 9. Deploy/upgrade the app using Helm chart
-      - name: Helm upgrade/install
-        run: |
-          set -eo pipefail
-          helm upgrade --install statuspage infra/helm/statuspage \
-            --namespace "${K8S_NAMESPACE}" \
-            --create-namespace \
-            --set image.repository="${ECR_REPO}" \
-            --set image.tag="${GIT_SHA}" \
-            --set image.pullPolicy=Always  \
-            --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-            --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
-            --set ingress.enabled=true \
-            --set ingress.className=alb \
-            --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}"
-            --set ingress.hosts[0].paths[0].path=/ \
-            --set ingress.hosts[0].paths[0].pathType=Prefix
-            # --set acmArn="${{ secrets.ACM_ARN }}"
+      # 9. Terraform init/plan/apply instead of direct Helm
+      - name: Terraform Init
+        working-directory: infra/terraform                 
+        run: terraform init -input=false
+
+      - name: Terraform Apply (app)
+        working-directory: infra/terraform              
+        env:
+          TF_VAR_image_tag: ${{ env.GIT_SHA }}             # pass SHA to var.image_tag
+        run: terraform apply -var enable_alb=true -var enable_app=true -auto-approve
+
+
 
 
