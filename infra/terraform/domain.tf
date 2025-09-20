@@ -114,10 +114,6 @@ output "acm_arn" {
   value = aws_acm_certificate_validation.site[0].certificate_arn
 }
 
-set {
-  name  = "acmArn"
-  value = aws_acm_certificate.site[0].arn
-}
 
 # -------------------------- Outputs -------------------------#
 output "route53_zone_id" {

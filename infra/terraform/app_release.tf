@@ -144,6 +144,11 @@ resource "helm_release" "statuspage" {
     value = "https"
   }
 
+  set {
+    name  = "acmArn"
+    value = aws_acm_certificate.site[0].arn
+  }
+
   # ---------------------------- S3
   set {
   name  = "s3.bucket"
