@@ -418,6 +418,7 @@ resource "aws_iam_policy" "deploy_policy" {
         Resource = "*"
       },
       {
+        "Sid": "ECRPushPull"
         Effect   = "Allow",
         Action   = [
           "ecr:BatchCheckLayerAvailability",
@@ -432,16 +433,19 @@ resource "aws_iam_policy" "deploy_policy" {
       },
       ####-------- Route53
       {
+        "Sid": "Route53ListZoneAndTags",
         Effect = "Allow",
         Action = [
           "route53:ListHostedZones",
           "route53:ListHostedZonesByName",
           "route53:GetHostedZone",
-          "route53:ListResourceRecordSets"
+          "route53:ListResourceRecordSets",
+          "route53:ListTagsForResource"
         ],
         Resource = "*"
       },
       {
+        "Sid": "Route53ChangeInOurZone",
         Effect = "Allow",
         Action = [
           "route53:ChangeResourceRecordSets",
@@ -451,6 +455,7 @@ resource "aws_iam_policy" "deploy_policy" {
       },
 
       {
+        "Sid": "IamReadRoleForEksModule",
         Effect = "Allow",
         Action = [
           "iam:GetRole",
@@ -463,6 +468,7 @@ resource "aws_iam_policy" "deploy_policy" {
       },
 
       {
+        "Sid": "ElbDescribeForDebug",
         Effect = "Allow",
         Action = [
           "elasticloadbalancing:DescribeLoadBalancers",

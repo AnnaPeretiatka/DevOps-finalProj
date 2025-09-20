@@ -193,6 +193,13 @@ data "aws_lb" "ingress" {
   depends_on = [null_resource.wait_for_ingress_hostname]
 }
 */
+
+# Get the canonical hosted-zone ID for ALBs in this region
+data "aws_lb_hosted_zone_id" "alb" {
+  region              = var.aws_region
+  load_balancer_type  = "application"
+}
+
 # ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
 resource "aws_route53_record" "lb_cname" {
   count   = var.enable_app ? 1 : 0
@@ -220,10 +227,10 @@ resource "aws_route53_record" "root_alias" {
   type    = "A"
 
   alias {
-    #name                   = data.aws_lb.ingress[0].dns_name
-    #zone_id                = data.aws_lb.ingress[0].zone_id
-    name                   = aws_route53_record.lb_cname[0].fqdn
-    zone_id                = data.aws_route53_zone.authoritative.zone_id
+    name                   = data.kubernetes_ingress_v1.statuspage[0].status[0].load_balancer[0].ingress[0].hostname
+    zone_id                = data.aws_lb_hosted_zone_id.alb.zone_id
+    #name                   = aws_route53_record.lb_cname[0].fqdn
+    #zone_id                = data.aws_route53_zone.authoritative.zone_id
     evaluate_target_health = false
   }
   depends_on = [aws_route53_record.lb_cname]
