@@ -107,17 +107,6 @@ jobs:
             ACM_FLAGS="--set env.SITE_PROTOCOL=http"
           fi
 
-      # Check and clean up Helm locks
-      - name: Check and clean up Helm locks
-        run: |
-          set -euo pipefail
-          RELEASE_NAME="statuspage"
-          NAMESPACE="${K8S_NAMESPACE}"
-          if kubectl get cm -n "${NAMESPACE}" | grep -q "sh.helm.release.v1.${RELEASE_NAME}"; then
-            echo "Cleaning up Helm lock for release ${RELEASE_NAME} in namespace ${NAMESPACE}..."
-            kubectl delete cm -n "${NAMESPACE}" "sh.helm.release.v1.${RELEASE_NAME}.v1" || true
-          fi
-
       # 9. Deploy via Helm
       - name: Deploy via Helm (app only)
         env:
@@ -152,8 +141,9 @@ jobs:
             --set-string env.DATABASE_URL="${DATABASE_URL}" \
             --set env.REDIS_URL='${{ secrets.REDIS_URL }}' \
             --set env.STATUS_HOSTNAME="${STATUS_HOSTNAME}" \
-            --set env.ALLOWED_HOSTS="${STATUS_HOSTNAME}" \
+            --set env.ALLOWED_HOSTS="${STATUS_HOSTNAME}"
             --set env.SITE_PROTOCOL='https' \
+            --set collectstatic.enabled=false \ 
             --set s3.bucket="status-page-ay-statics3-992382545251" \
             --set s3.region='${{ env.AWS_REGION }}' \
             --set ingress.enabled=true \
@@ -177,7 +167,7 @@ jobs:
             }
           echo "Helm succeeded."
 
-
+      
 
 
 
