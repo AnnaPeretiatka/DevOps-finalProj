@@ -427,6 +427,44 @@ resource "aws_iam_policy" "deploy_policy" {
           "ecr:DescribeRepositories"
         ],
         Resource = aws_ecr_repository.app.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "route53:ListHostedZones",
+          "route53:ListHostedZonesByName",
+          "route53:GetHostedZone"
+        ],
+        Resource = "*"
+      },
+
+      {
+        Effect = "Allow",
+        Action = [
+          "route53:ChangeResourceRecordSets",
+          "route53:ListResourceRecordSets"
+        ],
+        Resource = "arn:aws:route53:::hostedzone/${aws_route53_zone.this.zone_id}"
+      },
+
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:GetRole",
+          "iam:ListAttachedRolePolicies"
+        ],
+        Resource = "*"
+      },
+
+      {
+        Effect = "Allow",
+        Action = [
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth"
+        ],
+        Resource = "*"
       }
     ]
   })
