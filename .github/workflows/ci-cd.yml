@@ -77,26 +77,23 @@ jobs:
       - name: Build DATABASE_URL
         run: |
           set -euo pipefail
-          DBID="status-page-ay-pg"
 
-          DATABASE_URL='postgresql://statuspage:vk$BbI#jG6XMG$5J0>F9jc[0xu*J@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require'
+          # Escape special chars in password
+          DB_PASS_ESCAPED=$(printf '%q' "vk\$BbI#jG6XMG\$5J0>F9jc[0xu*J")
+
+          DATABASE_URL="postgresql://statuspage:${DB_PASS_ESCAPED}@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require"
           echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
 
-      # Deploy with Helm
+      # Deploy via Helm
       - name: Deploy via Helm
         env:
           STATUS_HOSTNAME: ${{ secrets.STATUS_HOSTNAME }}
           DATABASE_URL: ${{ env.DATABASE_URL }}
-          ACM_ARN: ${{ secrets.ACM_ARN }}
+          ACM_ARN: arn:aws:acm:us-east-1:992382545251:certificate/64de4465-fc68-4518-936f-e298a6c07b51
         run: |
           set -euo pipefail
 
-          ACM_FLAGS=""
-          if [[ -n "${ACM_ARN:-}" ]]; then
-            ACM_FLAGS="--set acmArn='${ACM_ARN}' --set env.SITE_PROTOCOL=https"
-          else
-            ACM_FLAGS="--set env.SITE_PROTOCOL=http"
-          fi
+          ACM_FLAGS="--set acmArn='${ACM_ARN}' --set env.SITE_PROTOCOL=https"
 
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
