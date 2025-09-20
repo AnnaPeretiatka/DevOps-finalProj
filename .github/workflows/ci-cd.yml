@@ -1,135 +1,146 @@
-name: CI/CD
+name: ci-cd
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: ${{ secrets.ECR_REPO }}
+  EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }}
+  K8S_NAMESPACE: statuspage
+  DB_USER: statuspage
+  DB_HOST: status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com
+  DB_NAME: statuspage
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-            | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO }}
-
-      - name: Build and push Docker image
-        run: |
-          IMAGE_URI=${{ secrets.ECR_REPO }}:${{ github.sha }}
-          docker build -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-          echo "GIT_SHA=${{ github.sha }}" >> $GITHUB_ENV
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          version: 'v1.30.0'
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'latest'
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set up Helm
+      - name: Build & push Docker image
+        run: |
+          set -euo pipefail
+          GIT_SHA=$(git rev-parse --short HEAD)
+          IMAGE_URI="${{ env.ECR_REPO }}:${GIT_SHA}"
+
+          echo "Building image: ${IMAGE_URI}"
+          docker build -t "${IMAGE_URI}" .
+
+          echo "Pushing image: ${IMAGE_URI}"
+          docker push "${IMAGE_URI}"
+
+          docker tag "${IMAGE_URI}" "${{ env.ECR_REPO }}:latest"
+          docker push "${{ env.ECR_REPO }}:latest"
+
+          echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
+          echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
+
+      - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
-          version: 'latest'
+          version: 'v3.14.4'
 
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig \
-            --region ${{ secrets.AWS_REGION }} \
-            --name ${{ secrets.EKS_CLUSTER }}
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER}"
 
-      - name: Fetch dynamic DATABASE_URL
-        id: db
+      - name: Sanity check connectivity
         run: |
+          kubectl version
+          kubectl get ns
+          kubectl get nodes -o wide
+
+      # 🔥 Build DATABASE_URL dynamically from RDS Secrets Manager
+      - name: Build DATABASE_URL
+        run: |
+          set -euo pipefail
           DBID="status-page-ay-pg"
-          DB_USER="statuspage"
-          DB_HOST="status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com"
-          DB_PORT="5432"
-          DB_NAME="statuspage"
 
           SECRET_ARN=$(aws rds describe-db-instances \
-            --region "${{ secrets.AWS_REGION }}" \
+            --region "${AWS_REGION}" \
             --db-instance-identifier "$DBID" \
             --query 'DBInstances[0].MasterUserSecret.SecretArn' \
             --output text)
 
           DB_SECRET=$(aws secretsmanager get-secret-value \
-            --region "${{ secrets.AWS_REGION }}" \
+            --region "${AWS_REGION}" \
             --secret-id "$SECRET_ARN" \
             --query SecretString \
             --output text)
 
           DB_PASS=$(echo "$DB_SECRET" | jq -r .password)
 
-          DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
-          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
+          DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}?sslmode=require"
+          echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
 
-      - name: Deploy with Helm
-        shell: bash
+      # 🚀 Deploy with Helm
+      - name: Deploy via Helm
+        env:
+          STATUS_HOSTNAME: ${{ secrets.STATUS_HOSTNAME }}
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          ACM_ARN: ${{ secrets.ACM_ARN }}
         run: |
           set -euo pipefail
 
           ACM_FLAGS=""
-          if [[ -n "${{ secrets.ACM_ARN }}" ]]; then
-            ACM_FLAGS="--set acmArn='${{ secrets.ACM_ARN }}' --set env.SITE_PROTOCOL=https"
+          if [[ -n "${ACM_ARN:-}" ]]; then
+            ACM_FLAGS="--set acmArn='${ACM_ARN}' --set env.SITE_PROTOCOL=https"
           else
             ACM_FLAGS="--set env.SITE_PROTOCOL=http"
           fi
 
           helm upgrade --install statuspage infra/helm/statuspage \
-            --namespace "statuspage" \
+            --namespace "${K8S_NAMESPACE}" \
             --create-namespace \
-            --set image.repository="${{ secrets.ECR_REPO }}" \
-            --set image.tag="${{ env.GIT_SHA }}" \
+            --set image.repository="${ECR_REPO}" \
+            --set image.tag="${GIT_SHA}" \
             --set image.pullPolicy=Always \
-            --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-            --set-string env.DATABASE_URL="${{ env.DATABASE_URL }}" \
-            --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
-            --set env.STATUS_HOSTNAME="${{ secrets.STATUS_HOSTNAME }}" \
-            --set env.ALLOWED_HOSTS="${{ secrets.STATUS_HOSTNAME }}" \
+            --set env.SECRET_KEY='${{ secrets.SECRET_KEY }}' \
+            --set-string env.DATABASE_URL="${DATABASE_URL}" \
+            --set env.REDIS_URL='${{ secrets.REDIS_URL }}' \
+            --set env.STATUS_HOSTNAME="${STATUS_HOSTNAME}" \
+            --set env.ALLOWED_HOSTS="${STATUS_HOSTNAME}" \
             --set collectstatic.enabled=false \
             --set s3.bucket="status-page-ay-statics3-992382545251" \
-            --set s3.region="${{ secrets.AWS_REGION }}" \
+            --set s3.region="${AWS_REGION}" \
             --set ingress.enabled=true \
             --set ingress.className=alb \
-            --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}" \
+            --set ingress.hosts[0].host="${STATUS_HOSTNAME}" \
             --set ingress.hosts[0].paths[0].path=/ \
             --set ingress.hosts[0].paths[0].pathType=Prefix \
-            $ACM_FLAGS || {
+            ${ACM_FLAGS} || {
               code=$?
               echo "::error::Helm upgrade failed with exit code $code"
               echo "----- kube events (last 100) -----"
-              kubectl -n "statuspage" get events --sort-by=.lastTimestamp | tail -n 100 || true
+              kubectl -n "${K8S_NAMESPACE}" get events --sort-by=.lastTimestamp | tail -n 100 || true
               echo "----- web pods -----"
-              kubectl -n "statuspage" get pods -l app=statuspage,tier=web -o wide || true
+              kubectl -n "${K8S_NAMESPACE}" get pods -l app=statuspage,tier=web -o wide || true
               echo "----- web pod logs (last 200 lines) -----"
-              for p in $(kubectl -n "statuspage" get pods -l app=statuspage,tier=web -o name || true); do
+              for p in $(kubectl -n "${K8S_NAMESPACE}" get pods -l app=statuspage,tier=web -o name || true); do
                 echo "### $p"
-                kubectl -n "statuspage" logs "$p" --tail=200 || true
+                kubectl -n "${K8S_NAMESPACE}" logs "$p" --tail=200 || true
               done
               exit $code
             }
