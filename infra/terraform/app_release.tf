@@ -38,7 +38,7 @@ resource "helm_release" "statuspage" {
   }
   set {
     name  = "image.tag"
-    value = var.image_tagt
+    value = var.image_tag
   }
   set {
     name  = "image.pullPolicy"  
