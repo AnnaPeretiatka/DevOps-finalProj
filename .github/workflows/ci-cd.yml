@@ -82,11 +82,17 @@ jobs:
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
             --create-namespace \
-            --set image.repository="${{ env.ECR_REPO }}" \
+            --set image.repository="${ECR_REPO}" \
             --set image.tag="${GIT_SHA}" \
             --set image.pullPolicy=Always  \
             --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
             --set env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
+            --set ingress.enabled=true \
+            --set ingress.className=alb \
             --set ingress.hosts[0].host="${{ secrets.STATUS_HOSTNAME }}"
+            --set ingress.hosts[0].paths[0].path=/ \
+            --set ingress.hosts[0].paths[0].pathType=Prefix
             # --set acmArn="${{ secrets.ACM_ARN }}"
+
+
