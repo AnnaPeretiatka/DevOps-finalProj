@@ -81,7 +81,7 @@ jobs:
           # Escape special chars in password
           DB_PASS_ESCAPED=$(printf '%q' "vk\$BbI#jG6XMG\$5J0>F9jc[0xu*J")
 
-          DATABASE_URL="postgresql://statuspage:${DB_PASS_ESCAPED}@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require"
+          DATABASE_URL='postgresql://statuspage:${DB_PASS_ESCAPED}@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require'
           echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
 
       # Deploy via Helm
@@ -89,7 +89,7 @@ jobs:
         env:
           STATUS_HOSTNAME: ${{ secrets.STATUS_HOSTNAME }}
           DATABASE_URL: ${{ env.DATABASE_URL }}
-          ACM_ARN: arn:aws:acm:us-east-1:992382545251:certificate/64de4465-fc68-4518-936f-e298a6c07b51
+          ACM_ARN: 'arn:aws:acm:us-east-1:992382545251:certificate/64de4465-fc68-4518-936f-e298a6c07b51'
         run: |
           set -euo pipefail
 
