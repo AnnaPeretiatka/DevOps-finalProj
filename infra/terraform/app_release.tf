@@ -44,7 +44,6 @@ resource "helm_release" "statuspage" {
     value = "Always"          
   }
   
-
   # -------------------------- Core env
   set {
     name = "env.SECRET_KEY"
@@ -58,11 +57,12 @@ resource "helm_release" "statuspage" {
     name = "env.STATUS_HOSTNAME"
     value = "status-page-ay.com"
   }
-
+  /*
   set {
     name  = "env.SITE_PROTOCOL"
     value = "http"
   }
+  */
   
   # ---------------------------- DB (from Secrets Manager)
 
@@ -136,6 +136,14 @@ resource "helm_release" "statuspage" {
     value = "ip"
   }
 
+  # -------https
+
+  # Use HTTPS inside your app config
+  set {
+    name  = "env.SITE_PROTOCOL"
+    value = "https"
+  }
+
   # ---------------------------- S3
   set {
   name  = "s3.bucket"
@@ -164,6 +172,7 @@ resource "helm_release" "statuspage" {
   depends_on = [
     aws_eks_node_group.default,   
     helm_release.alb,
-    module.db
+    module.db,
+    aws_acm_certificate_validation.site
   ]
 }

@@ -59,6 +59,28 @@ ingress:
 
 acmArn: ""
 
+grafana:
+  adminPassword: "change-me"   # or use a Kubernetes secret if preferred
+
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    hosts:
+      - grafana.status-page-ay.com
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/certificate-arn: <ACM_ARN>   # paste aws_acm_certificate.site.arn
+      alb.ingress.kubernetes.io/ssl-redirect: '443'
+
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring:3100
+      isDefault: false
+
 hpa:
   enabled: true
   minReplicas: 2

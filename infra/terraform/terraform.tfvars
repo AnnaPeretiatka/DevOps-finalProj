@@ -13,5 +13,3 @@ domain_contact = {
   country_code   = "IL"
   zip_code       = "6777801"
 }
-
-#secret_key = "oWozUm2hkWdpeWaPqBK8nt1pv9wOk5Z6k7U4QDrFVXE3vyZWI-0OQ3qz3G_-ZvFQ"

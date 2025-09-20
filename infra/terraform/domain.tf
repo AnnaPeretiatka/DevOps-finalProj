@@ -75,9 +75,48 @@ resource "aws_route53domains_domain" "this" {
 }
 */
 
-# -------------------------- ★ If domain was creted before and not from terraform above -------------------------#
+# ----->  ★ = If domain was creted before and not from terraform above
+
+# -------------------------- https - ACM_certificate ----------------------------#
 data "aws_route53_zone" "authoritative" {
-  zone_id = "Z00067461X470B5S2F567"      
+  name         = var.domain_name
+  zone_id = "Z00067461X470B5S2F567" # ★
+  private_zone = false
+}
+
+resource "aws_acm_certificate" "site" {
+  count             = var.enable_app ? 1 : 0
+  domain_name               = var.domain_name
+  subject_alternative_names = ["www.${var.domain_name}"]
+  validation_method         = "DNS"
+   lifecycle {
+    create_before_destroy = true
+  }
+  tags               = local.tags
+}
+
+resource "aws_route53_record" "cert_validation" {
+  count   = var.enable_app ? length(aws_acm_certificate.site[0].domain_validation_options) : 0
+  zone_id = data.aws_route53_zone.authoritative.zone_id
+  name    = aws_acm_certificate.site[0].domain_validation_options[count.index].resource_record_name
+  type    = aws_acm_certificate.site[0].domain_validation_options[count.index].resource_record_type
+  records = [aws_acm_certificate.site[0].domain_validation_options[count.index].resource_record_value]
+  ttl     = 60
+}
+
+resource "aws_acm_certificate_validation" "site" {
+  count          = var.enable_app ? 1 : 0
+  certificate_arn       = aws_acm_certificate.site[0].arn
+  validation_record_fqdns = [for r in aws_route53_record.cert_validation : r.fqdn]
+}
+
+output "acm_arn" {
+  value = aws_acm_certificate_validation.site[0].certificate_arn
+}
+
+set {
+  name  = "acmArn"
+  value = aws_acm_certificate.site[0].arn
 }
 
 # -------------------------- Outputs -------------------------#

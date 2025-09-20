@@ -18,7 +18,7 @@ env:
   K8S_NAMESPACE: statuspage
   DB_USER: statuspage
   DB_HOST: status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com
-  DB_NAME: statuspag
+  DB_NAME: statuspage
 
 jobs:
   build-and-deploy:
@@ -94,7 +94,18 @@ jobs:
           )
           echo "DATABASE_URL=postgresql://${DB_USER}:${ENC}@${DB_HOST}:5432/${DB_NAME}?sslmode=require" >> $GITHUB_ENV
 
-      
+      - name: Find ACM cert (optional)
+        id: acm
+        run: |
+          set -euo pipefail
+
+          # Build flags conditionally: HTTPS if ACM exists, else HTTP
+          if [ "${{ steps.acm.outputs.have_acm }}" = "true" ]; then
+            ACM_FLAGS="--set acmArn='${{ steps.acm.outputs.acm_arn }}' --set env.SITE_PROTOCOL=https"
+          else
+            ACM_FLAGS="--set env.SITE_PROTOCOL=http"
+          fi
+
       # 9. Deploy via Helm
       - name: Deploy via Helm (app only)
         run: |
@@ -108,15 +119,17 @@ jobs:
             --set env.SECRET_KEY='${{ secrets.SECRET_KEY }}' \
             --set-string env.DATABASE_URL="${DATABASE_URL}" \
             --set env.REDIS_URL='${{ secrets.REDIS_URL }}' \
-            --set env.STATUS_HOSTNAME='${{ secrets.STATUS_HOSTNAME }}' \
-            --set env.SITE_PROTOCOL='http' \
-            --set s3.bucket='${{ secrets.STATIC_BUCKET }}' \
+            --set env.STATUS_HOSTNAME="${STATUS_HOSTNAME}" \
+            --set env.ALLOWED_HOSTS="${STATUS_HOSTNAME}"
+            --set env.SITE_PROTOCOL='https' \
+            --set s3.bucket="status-page-ay-statics3-992382545251" \
             --set s3.region='${{ env.AWS_REGION }}' \
             --set ingress.enabled=true \
             --set ingress.className=alb \
-            --set ingress.hosts[0].host=status-page-ay.com \
+            --set ingress.hosts[0].host="${STATUS_HOSTNAME}" \
             --set ingress.hosts[0].paths[0].path=/ \
-            --set ingress.hosts[0].paths[0].pathType=Prefix || {
+            --set ingress.hosts[0].paths[0].pathType=Prefix \
+            ${ACM_FLAGS} || {
               code=$?
               echo "::error::Helm upgrade failed with exit code $code"
               echo "----- kube events (last 100) -----"
