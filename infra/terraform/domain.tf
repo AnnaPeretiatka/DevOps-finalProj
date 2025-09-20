@@ -220,8 +220,10 @@ resource "aws_route53_record" "root_alias" {
   type    = "A"
 
   alias {
-    name                   = data.aws_lb.ingress[0].dns_name
-    zone_id                = data.aws_lb.ingress[0].zone_id 
+    #name                   = data.aws_lb.ingress[0].dns_name
+    #zone_id                = data.aws_lb.ingress[0].zone_id
+    name                   = aws_route53_record.lb_cname[0].fqdn
+    zone_id                = data.aws_route53_zone.authoritative.zone_id
     evaluate_target_health = false
   }
   depends_on = [aws_route53_record.lb_cname]
