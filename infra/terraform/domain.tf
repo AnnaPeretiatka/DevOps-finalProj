@@ -185,13 +185,14 @@ locals {
 }
 
 # ---------------- get ALB - dns_name + original hosted zone id -------------------#
+/*
 data "aws_lb" "ingress" {
   count     = var.enable_app ? 1 : 0
   name       = local.alb_name
   #depends_on = [time_sleep.wait_for_alb]
   depends_on = [null_resource.wait_for_ingress_hostname]
 }
-
+*/
 # ---------------- lb.<domain> CNAME -> ALB DNS ------------------------------------#
 resource "aws_route53_record" "lb_cname" {
   count   = var.enable_app ? 1 : 0
@@ -200,7 +201,10 @@ resource "aws_route53_record" "lb_cname" {
   name    = "lb.${var.domain_name}"
   type    = "CNAME"
   ttl     = 60
-  records = [local.ingress_hostname]
+  #records = [local.ingress_hostname]
+  records = [
+    data.kubernetes_ingress_v1.statuspage[0].status[0].load_balancer[0].ingress[0].hostname
+  ]
 
   #depends_on = [time_sleep.wait_for_alb]
   depends_on = [null_resource.wait_for_ingress_hostname]
