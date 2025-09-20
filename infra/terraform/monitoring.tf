@@ -1,3 +1,4 @@
+/*
 # --------------------------------------------- Loki ----------------------------------------------
 resource "helm_release" "loki" {
   name             = "loki"
@@ -249,3 +250,4 @@ resource "aws_route53_record" "grafana_alias" {
 
   depends_on = [ null_resource.wait_for_grafana_ingress ]
 }
+*/

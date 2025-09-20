@@ -272,7 +272,7 @@ resource "aws_s3_bucket_policy" "static_public_read" {
       Principal = "*",
       Action    = ["s3:GetObject"],
       #Resource  = "arn:aws:s3:::${aws_s3_bucket.static.bucket}/*"
-      Resource: "${aws_s3_bucket.static.arn}/*"                # limit to /static/*
+      Resource: "${aws_s3_bucket.static.arn}/*"          
     }]
   })
   depends_on = [aws_s3_bucket_public_access_block.static]
