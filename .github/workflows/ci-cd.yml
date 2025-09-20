@@ -75,13 +75,6 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Debug AWS CLI and Variables
-        run: |
-          set -euo pipefail
-          echo "AWS_REGION=${AWS_REGION}"
-          echo "DBID=status-page-ay-pg"
-          aws rds describe-db-instances --region "${AWS_REGION}" --db-instance-identifier "status-page-ay-pg"
-
       # 🔥 Build DATABASE_URL dynamically from RDS Secrets Manager
       - name: Build DATABASE_URL
         run: |
