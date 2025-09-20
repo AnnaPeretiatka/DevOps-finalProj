@@ -82,7 +82,7 @@ jobs:
           echo "DBID=status-page-ay-pg"
           aws rds describe-db-instances --region "${AWS_REGION}" --db-instance-identifier "status-page-ay-pg"
 
-      # 🔥 Build DATABASE_URL dynamically from RDS Secrets Manager
+      # Build DATABASE_URL dynamically from RDS Secrets Manager
       - name: Build DATABASE_URL
         run: |
           set -euo pipefail
@@ -105,7 +105,7 @@ jobs:
           DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}?sslmode=require"
           echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
 
-      # 🚀 Deploy with Helm
+      # Deploy with Helm
       - name: Deploy via Helm
         env:
           STATUS_HOSTNAME: ${{ secrets.STATUS_HOSTNAME }}
