@@ -71,6 +71,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3  # ★ installs terraform on the runner
         with:
           terraform_version: 1.9.5
+          terraform_wrapper: false
 
       # 7. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
       - name: Update kubeconfig for EKS
@@ -87,6 +88,25 @@ jobs:
       - name: Terraform Init
         working-directory: infra/terraform                 
         run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: infra/terraform
+        env:
+          TF_VAR_image_tag: ${{ env.GIT_SHA }}
+        run: terraform plan -var enable_alb=true -var enable_app=true -out=tfplan
+
+      - name: Terraform Show (human)
+        working-directory: infra/terraform
+        run: terraform show -no-color tfplan
+
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        env:
+          TF_VAR_image_tag: ${{ env.GIT_SHA }}
+        run: |
+          set -e
+          terraform apply -no-color -auto-approve tfplan
+          echo "apply exit code=$?"
 
       - name: Terraform Apply (app)
         working-directory: infra/terraform              
