@@ -22,4 +22,13 @@ spec:
           envFrom:
             - configMapRef: { name: statuspage-config }
             - secretRef: { name: statuspage-secrets }
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.s3.region | quote }}
+            - name: AWS_STORAGE_BUCKET_NAME
+              value: {{ .Values.s3.bucket | quote }}
+            #- name: AWS_S3_CUSTOM_DOMAIN
+            #  value: {{ default "" .Values.s3.customDomain | quote }}
+            - name: DJANGO_SETTINGS_MODULE
+              value: {{ .Values.env.DJANGO_SETTINGS_MODULE | quote }}
 {{- end }}

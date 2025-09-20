@@ -8,7 +8,7 @@ import dj_database_url
 
 EXTRA_APPS = [] 
 
-USE_S3 = True
+USE_S3 = bool(os.environ.get("AWS_STORAGE_BUCKET_NAME"))
 
 if USE_S3:
     EXTRA_APPS.append("storages")
