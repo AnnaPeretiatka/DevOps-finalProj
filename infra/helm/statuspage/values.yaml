@@ -32,11 +32,11 @@ env:
   REDIS_URL: "redis://statuspage-redis.statuspage.svc.cluster.local:6379/0"
 
   db:
-    host: ""           
+    host: status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com           
     port: 5432
     name: "statuspage" 
     user: "statuspage" 
-    password: "" 
+    password: 'vk$BbI#jG6XMG$5J0>F9jc[0xu*J'
 
 service: { 
   port: 80, # what the Service (and ALB) will expose
