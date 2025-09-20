@@ -11,6 +11,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -34,6 +40,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -50,6 +62,32 @@ jobs:
             --region ${{ secrets.AWS_REGION }} \
             --name ${{ secrets.EKS_CLUSTER }}
 
+      - name: Fetch dynamic DATABASE_URL
+        id: db
+        run: |
+          DBID="status-page-ay-pg"
+          DB_USER="statuspage"
+          DB_HOST="status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com"
+          DB_PORT="5432"
+          DB_NAME="statuspage"
+
+          SECRET_ARN=$(aws rds describe-db-instances \
+            --region "${{ secrets.AWS_REGION }}" \
+            --db-instance-identifier "$DBID" \
+            --query 'DBInstances[0].MasterUserSecret.SecretArn' \
+            --output text)
+
+          DB_SECRET=$(aws secretsmanager get-secret-value \
+            --region "${{ secrets.AWS_REGION }}" \
+            --secret-id "$SECRET_ARN" \
+            --query SecretString \
+            --output text)
+
+          DB_PASS=$(echo "$DB_SECRET" | jq -r .password)
+
+          DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
+          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
+
       - name: Deploy with Helm
         shell: bash
         run: |
@@ -63,18 +101,18 @@ jobs:
           fi
 
           helm upgrade --install statuspage infra/helm/statuspage \
-            --namespace "${{ secrets.K8S_NAMESPACE }}" \
+            --namespace "statuspage" \
             --create-namespace \
             --set image.repository="${{ secrets.ECR_REPO }}" \
             --set image.tag="${{ env.GIT_SHA }}" \
             --set image.pullPolicy=Always \
             --set env.SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-            --set-string env.DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --set-string env.DATABASE_URL="${{ env.DATABASE_URL }}" \
             --set env.REDIS_URL="${{ secrets.REDIS_URL }}" \
             --set env.STATUS_HOSTNAME="${{ secrets.STATUS_HOSTNAME }}" \
             --set env.ALLOWED_HOSTS="${{ secrets.STATUS_HOSTNAME }}" \
             --set collectstatic.enabled=false \
-            --set s3.bucket="${{ secrets.S3_BUCKET }}" \
+            --set s3.bucket="status-page-ay-statics3-992382545251" \
             --set s3.region="${{ secrets.AWS_REGION }}" \
             --set ingress.enabled=true \
             --set ingress.className=alb \
@@ -85,13 +123,13 @@ jobs:
               code=$?
               echo "::error::Helm upgrade failed with exit code $code"
               echo "----- kube events (last 100) -----"
-              kubectl -n "${{ secrets.K8S_NAMESPACE }}" get events --sort-by=.lastTimestamp | tail -n 100 || true
+              kubectl -n "statuspage" get events --sort-by=.lastTimestamp | tail -n 100 || true
               echo "----- web pods -----"
-              kubectl -n "${{ secrets.K8S_NAMESPACE }}" get pods -l app=statuspage,tier=web -o wide || true
+              kubectl -n "statuspage" get pods -l app=statuspage,tier=web -o wide || true
               echo "----- web pod logs (last 200 lines) -----"
-              for p in $(kubectl -n "${{ secrets.K8S_NAMESPACE }}" get pods -l app=statuspage,tier=web -o name || true); do
+              for p in $(kubectl -n "statuspage" get pods -l app=statuspage,tier=web -o name || true); do
                 echo "### $p"
-                kubectl -n "${{ secrets.K8S_NAMESPACE }}" logs "$p" --tail=200 || true
+                kubectl -n "statuspage" logs "$p" --tail=200 || true
               done
               exit $code
             }
