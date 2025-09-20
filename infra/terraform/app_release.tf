@@ -30,7 +30,6 @@ resource "helm_release" "statuspage" {
   atomic           = false
   force_update   = true
 
-
   # ---------------------------- image.* 
   set {
     name  = "image.repository"
