@@ -18,10 +18,12 @@ spec:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python","/app/statuspage/manage.py","migrate","--noinput"]      
+          command: ["python","/app/statuspage/manage.py","migrate","--noinput"]
           envFrom:
-            - configMapRef: { name: statuspage-config }
-            - secretRef: { name: statuspage-secrets }
+            - configMapRef:
+                name: statuspage-config
+            - secretRef:
+                name: statuspage-secrets
           env:
             - name: AWS_REGION
               value: {{ .Values.s3.region | quote }}
