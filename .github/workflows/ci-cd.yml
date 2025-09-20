@@ -1,140 +1,101 @@
-name: ci-cd
+name: CI/CD Pipeline
 
-on: # triggers for this workflow
+on:
   push:
-    branches:
-      - main           # run on every push to main
-  workflow_dispatch: {} # run when click "Run workflow" (allows manual runs from Actions tab)
-
-# permissions to request the OIDC token (to assume AWS role) and to read repo
-permissions:
-  id-token: write
-  contents: read
+    branches: [ main ]
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPO: ${{ secrets.ECR_REPO }} # 992382545251.dkr.ecr.us-east-1.amazonaws.com/status_page_ay-repo
-  EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }} # status-page-ay-eks
   K8S_NAMESPACE: statuspage
   DB_USER: statuspage
   DB_HOST: status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com
   DB_NAME: statuspage
-
+  STATUS_HOSTNAME: status-page-ay.com
+  ACM_ARN: arn:aws:acm:us-east-1:992382545251:certificate/64de4465-fc68-4518-936f-e298a6c07b51
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v3
 
-      # 2. Exchanges GitHub OIDC token for AWS session on the AWS_ROLE_ARN role created by Terraform
-      - name: Configure AWS credentials (OIDC)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 3. Install kubectl
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        run: |
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}
+          docker build -t ${{ secrets.ECR_REPO }}:$IMAGE_TAG .
+          docker push ${{ secrets.ECR_REPO }}:$IMAGE_TAG
+          echo "GIT_SHA=$IMAGE_TAG" >> $GITHUB_ENV
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          version: 'v1.30.0'
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      # 4. Log in to ECR
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ secrets.EKS_CLUSTER }} \
+            --region $AWS_REGION
 
-      # 5. Build the Docker image and push to ECR
-      - name: Build & push Docker image
+      - name: Fetch DB password from Secrets Manager
         run: |
           set -euo pipefail
-          GIT_SHA=$(git rev-parse --short HEAD)
-          IMAGE_URI="${{ env.ECR_REPO }}:${GIT_SHA}"
+          DBID="status-page-ay-pg"
 
-          echo "Building image: ${IMAGE_URI}"
-          docker build -t "${IMAGE_URI}" .
+          SECRET_ARN=$(aws rds describe-db-instances \
+            --region "$AWS_REGION" \
+            --db-instance-identifier "$DBID" \
+            --query 'DBInstances[0].MasterUserSecret.SecretArn' \
+            --output text)
 
-          echo "Pushing image: ${IMAGE_URI}"
-          docker push "${IMAGE_URI}"
+          DB_SECRET=$(aws secretsmanager get-secret-value \
+            --region "$AWS_REGION" \
+            --secret-id "$SECRET_ARN" \
+            --query SecretString \
+            --output text)
 
-          docker tag "${IMAGE_URI}" "${{ env.ECR_REPO }}:latest"
-          docker push "${{ env.ECR_REPO }}:latest"
+          DB_PASS=$(echo "$DB_SECRET" | jq -r .password)
 
-          echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
-          echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
-      
-      # 6. Install Helm
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: 'v3.14.4'
+          echo "DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}?sslmode=require" >> $GITHUB_ENV
 
-      # 7. Prepare kubeconfig so kubectl/helm can talk to EKS cluster
-      - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER}"
-
-      # 8. Sanity check connectivity
-      - name: Sanity check connectivity
-        run: |
-          kubectl version
-          kubectl get ns
-          kubectl get nodes -o wide
-
-      # Build a percent-encoded DATABASE_URL at runtime
-      - name: Build DATABASE_URL
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        run: |
-          set -euo pipefail
-          ENC=$(python - <<'PY'
-          import os, urllib.parse
-          print(urllib.parse.quote(os.environ["DB_PASSWORD"], safe=""))
-          PY
-          )
-          echo "DATABASE_URL=postgresql://${DB_USER}:${ENC}@${DB_HOST}:5432/${DB_NAME}?sslmode=require" >> $GITHUB_ENV
-
-      - name: Find ACM cert (optional)
-        id: acm
+      - name: Deploy with Helm
         run: |
           set -euo pipefail
 
-          # Build flags conditionally: HTTPS if ACM exists, else HTTP
-          if [ "${{ steps.acm.outputs.have_acm }}" = "true" ]; then
-            ACM_FLAGS="--set acmArn='${{ steps.acm.outputs.acm_arn }}' --set env.SITE_PROTOCOL=https"
-          else
-            ACM_FLAGS="--set env.SITE_PROTOCOL=http"
-          fi
+          ACM_FLAGS="--set ingress.annotations.\"alb\.ingress\.kubernetes\.io/listen-ports\"='[{\"HTTP\":80},{\"HTTPS\":443}]' \
+            --set ingress.annotations.\"alb\.ingress\.kubernetes\.io/certificate-arn\"=${ACM_ARN} \
+            --set ingress.annotations.\"alb\.ingress\.kubernetes\.io/ssl-redirect\"=443"
 
-      # 9. Deploy via Helm
-      - name: Deploy via Helm (app only)
-        env:
-          STATUS_HOSTNAME: status-page-ay.com   # the hostname for the status page
-          DATABASE_URL: ${{ env.DATABASE_URL }} # from prior step
-          ACM_ARN: ${{ secrets.ACM_ARN }}                   # optional; leave blank if not ready
-        run: |
-          set -euo pipefail
-
-          # Build ALB HTTPS annotations only when ACM_ARN is set
-          ACM_FLAGS=""
-          if [[ -n "${ACM_ARN:-}" ]]; then
-            # Prefer your chart's single knob if you kept .Values.acmArn
-            ACM_FLAGS="--set acmArn='${ACM_ARN}' --set env.SITE_PROTOCOL=https"
-          else
-            ACM_FLAGS="--set env.SITE_PROTOCOL=http"
-          fi
-          
-          #--set ingress.annotations."alb\.ingress\.kubernetes\.io/listen-ports"='\''[{"HTTP":80},{"HTTPS":443}]'\'' \
-          #--set ingress.annotations."alb\.ingress\.kubernetes\.io/certificate-arn"="'"${ACM_ARN}"'" \
-          #--set ingress.annotations."alb\.ingress\.kubernetes\.io/ssl-redirect"="443"'
-          
-
-          set -euo pipefail
           helm upgrade --install statuspage infra/helm/statuspage \
             --namespace "${K8S_NAMESPACE}" \
             --create-namespace \
-            --set image.repository="${ECR_REPO}" \
+            --set image.repository="${{ secrets.ECR_REPO }}" \
             --set image.tag="${GIT_SHA}" \
             --set image.pullPolicy=Always \
             --set env.SECRET_KEY='${{ secrets.SECRET_KEY }}' \
@@ -145,7 +106,7 @@ jobs:
             --set env.SITE_PROTOCOL='https' \
             --set collectstatic.enabled=false \
             --set s3.bucket="status-page-ay-statics3-992382545251" \
-            --set s3.region='${{ env.AWS_REGION }}' \
+            --set s3.region="${AWS_REGION}" \
             --set ingress.enabled=true \
             --set ingress.className=alb \
             --set ingress.hosts[0].host="${STATUS_HOSTNAME}" \
@@ -166,9 +127,3 @@ jobs:
               exit $code
             }
           echo "Helm succeeded."
-
-      
-
-
-
-
