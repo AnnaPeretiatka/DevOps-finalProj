@@ -16,6 +16,9 @@ env:
   ECR_REPO: ${{ secrets.ECR_REPO }} # 992382545251.dkr.ecr.us-east-1.amazonaws.com/status_page_ay-repo
   EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }} # status-page-ay-eks
   K8S_NAMESPACE: statuspage
+  DB_USER: statuspage
+  DB_HOST: status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com
+  DB_NAME: statuspag
 
 jobs:
   build-and-deploy:
@@ -61,7 +64,7 @@ jobs:
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
           echo "GIT_SHA=${GIT_SHA}" >> $GITHUB_ENV
       
-      # 6. Install Helm + Terraform
+      # 6. Install Helm
       - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
@@ -78,6 +81,21 @@ jobs:
           kubectl get ns
           kubectl get nodes -o wide
 
+      # Build a percent-encoded DATABASE_URL at runtime
+      - name: Build DATABASE_URL
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ENC=$(python - <<'PY'
+          import os, urllib.parse
+          print(urllib.parse.quote(os.environ["DB_PASSWORD"], safe=""))
+          PY
+          )
+          echo "DATABASE_URL=postgresql://${DB_USER}:${ENC}@${DB_HOST}:5432/${DB_NAME}?sslmode=require" >> $GITHUB_ENV
+
+      
+      # 9. Deploy via Helm
       - name: Deploy via Helm (app only)
         run: |
           set -euo pipefail
@@ -88,7 +106,7 @@ jobs:
             --set image.tag="${GIT_SHA}" \
             --set image.pullPolicy=Always \
             --set env.SECRET_KEY='${{ secrets.SECRET_KEY }}' \
-            --set env.DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+            --set-string env.DATABASE_URL="${DATABASE_URL}" \
             --set env.REDIS_URL='${{ secrets.REDIS_URL }}' \
             --set env.STATUS_HOSTNAME='${{ secrets.STATUS_HOSTNAME }}' \
             --set env.SITE_PROTOCOL='http' \
@@ -96,7 +114,7 @@ jobs:
             --set s3.region='${{ env.AWS_REGION }}' \
             --set ingress.enabled=true \
             --set ingress.className=alb \
-            --set ingress.hosts[0].host='${{ secrets.STATUS_HOSTNAME }}' \
+            --set ingress.hosts[0].host=status-page-ay.com \
             --set ingress.hosts[0].paths[0].path=/ \
             --set ingress.hosts[0].paths[0].pathType=Prefix || {
               code=$?
