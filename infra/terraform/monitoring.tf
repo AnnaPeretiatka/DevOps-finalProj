@@ -12,12 +12,20 @@ resource "helm_release" "loki" {
     value = "true" 
   }
   set { 
+    name = "gateway.enabled"
+    value = "false" 
+  }
+  set { 
     name = "loki.commonConfig.replication_factor" 
     value = "1" 
   }
   set { 
     name = "loki.storage.type" 
     value = "filesystem" 
+  }
+  set { 
+    name = "loki.compactor.enabled"
+    value = "false" 
   }
 
   #  ----------- persistence to EBS (via default StorageClass)---
@@ -46,10 +54,7 @@ resource "helm_release" "loki" {
     value = "false" 
   }
 
-  set { 
-    name = "gateway.enabled"
-    value = "false" 
-  }
+  
 
   #  ----------- Network ------------------------
   set { 
@@ -68,11 +73,12 @@ resource "helm_release" "loki" {
   }
   
   #  ---------- # retention (time-based) ----------
-
+  /*
   set { 
     name = "loki.limits_config.retention_period"
     value = "168h"  # 7d
-  } 
+  }
+  */
 
   # Make sure cluster is ready first
   depends_on = [
