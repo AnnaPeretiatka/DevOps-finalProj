@@ -79,9 +79,7 @@ jobs:
           set -euo pipefail
           DBID="status-page-ay-pg"
 
-          
-
-          DATABASE_URL="postgresql://statuspage:vk$BbI#jG6XMG$5J0>F9jc[0xu*J@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require"
+          DATABASE_URL='postgresql://statuspage:vk$BbI#jG6XMG$5J0>F9jc[0xu*J@status-page-ay-pg.cx248m4we6k7.us-east-1.rds.amazonaws.com:5432/statuspage?sslmode=require'
           echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
 
       # Deploy with Helm
