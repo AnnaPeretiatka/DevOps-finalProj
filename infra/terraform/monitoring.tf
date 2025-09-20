@@ -15,20 +15,27 @@ resource "helm_release" "loki" {
     name = "gateway.enabled"
     value = "false" 
   }
+
   set { 
-    name = "loki.commonConfig.replication_factor" 
-    value = "1" 
+    name = "backend.replicas" 
+    value = "0" 
   }
+
+  set { 
+    name = "read.replicas"    
+    value = "0" 
+  }
+
+  set { 
+    name = "write.replicas"   
+    value = "0" 
+  }
+
   set { 
     name = "loki.storage.type" 
     value = "filesystem" 
   }
-  set { 
-    name = "loki.compactor.enabled"
-    value = "false" 
-  }
 
-  #  ----------- persistence to EBS (via default StorageClass)---
   set { 
     name = "loki.persistence.enabled"
     value = "true" 
@@ -37,32 +44,25 @@ resource "helm_release" "loki" {
   set { 
     name = "loki.persistence.size"    
     value = "7Gi" 
-  }  
+  }
 
   set { 
-    name = "backend.enabled" 
+    name = "loki.compactor.enabled"
     value = "false" 
   }
 
   set { 
-    name = "read.enabled"    
-    value = "false" 
+    name = "loki.commonConfig.replication_factor" 
+    value = "1" 
   }
-
-  set { 
-    name = "write.enabled"  
-    value = "false" 
-  }
-
   
 
-  #  ----------- Network ------------------------
+  #  ----------- Network ---------
   set { 
     name = "loki.auth_enabled" 
     value = "false" 
   }
 
-  # Service on 3100
   set { 
     name = "service.type" 
     value = "ClusterIP" 
@@ -72,13 +72,6 @@ resource "helm_release" "loki" {
     value = "3100" 
   }
   
-  #  ---------- # retention (time-based) ----------
-  /*
-  set { 
-    name = "loki.limits_config.retention_period"
-    value = "168h"  # 7d
-  }
-  */
 
   # Make sure cluster is ready first
   depends_on = [
@@ -175,9 +168,9 @@ resource "helm_release" "kps" {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/target-type"
     value = "ip"
   }
-  set {
+  set_string {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
-    value = "'[{\"HTTP\":80},{\"HTTPS\":443}]'"
+    value = "[{\"HTTP\":80},{\"HTTPS\":443}]"
   }
   set {
     name  = "grafana.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/certificate-arn"
