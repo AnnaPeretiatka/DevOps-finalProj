@@ -356,7 +356,7 @@ resource "aws_route53_record" "cert_validation" {
       type   = dvo.resource_record_type
     }
   }
-  zone_id = aws_route53_zone.this.zone_id
+  zone_id = aws_route53_zone.this.zone_id ##############_________uses zone.this___________#####
   name    = each.value.name
   type    = each.value.type
   ttl     = 60
@@ -405,11 +405,13 @@ resource "aws_iam_policy" "deploy_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
+      ####-------- EKS describe
       {
         Effect   = "Allow",
         Action   = ["eks:DescribeCluster"],
         Resource = "*"
       },
+      ####-------- ECR login/push (already there)
       {
         Effect   = "Allow",
         Action   = ["ecr:GetAuthorizationToken"],
@@ -428,29 +430,33 @@ resource "aws_iam_policy" "deploy_policy" {
         ],
         Resource = aws_ecr_repository.app.arn
       },
+      ####-------- Route53
       {
         Effect = "Allow",
         Action = [
           "route53:ListHostedZones",
           "route53:ListHostedZonesByName",
-          "route53:GetHostedZone"
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets"
         ],
         Resource = "*"
       },
-
       {
         Effect = "Allow",
         Action = [
           "route53:ChangeResourceRecordSets",
           "route53:ListResourceRecordSets"
         ],
-        Resource = "arn:aws:route53:::hostedzone/${aws_route53_zone.this.zone_id}"
+        Resource = "arn:aws:route53:::hostedzone/${data.aws_route53_zone.authoritative.zone_id}"
       },
 
       {
         Effect = "Allow",
         Action = [
           "iam:GetRole",
+          "iam:GetUser",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
           "iam:ListAttachedRolePolicies"
         ],
         Resource = "*"
